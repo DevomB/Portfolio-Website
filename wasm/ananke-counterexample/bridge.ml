@@ -333,120 +333,144 @@ type model_payment =
   ; mutable m_closed : bool
   }
 
-let scenario ~seed ~length =
-  let rng = ref (Rng.create seed) in
-  let pick n =
-    if n <= 0
-    then 0
-    else (
-      let r, v = Rng.int !rng ~exclusive_upper_bound:n in
-      rng := r;
-      v)
+(* The generator's world: a model of the payment system just good enough to
+   only ever issue commands a correct system would accept, so every failure
+   the runtime finds is the domain's, not the scenario's. *)
+type gen =
+  { mutable rng : Rng.t
+  ; balances : (string, int) Hashtbl.t
+  ; mutable payments : (string * model_payment) list
+  ; mutable keys : int
+  ; mutable issued : Payments.command list
+  ; mutable commands : Payments.command list
+  }
+
+let names = [ "alice"; "bob"; "carol"; "dave" ]
+let opening = [ 1000; 800; 600; 400 ]
+
+let pick g n =
+  if n <= 0
+  then 0
+  else (
+    let r, v = Rng.int g.rng ~exclusive_upper_bound:n in
+    g.rng <- r;
+    v)
+;;
+
+let next_key g =
+  g.keys <- g.keys + 1;
+  Printf.sprintf "k%d" g.keys
+;;
+
+let round10 x = Int.max 10 (x / 10 * 10)
+let emit g c = g.commands <- c :: g.commands
+
+(* a fresh command: remembered for redelivery, then emitted *)
+let issue g c =
+  g.issued <- c :: g.issued;
+  emit g c;
+  true
+;;
+
+let authorize g =
+  let payers = List.filter names ~f:(fun n -> Hashtbl.find_exn g.balances n >= 60) in
+  match payers with
+  | [] -> false
+  | _ ->
+    let payer = List.nth_exn payers (pick g (List.length payers)) in
+    let others = List.filter names ~f:(fun n -> not (String.equal n payer)) in
+    let payee = List.nth_exn others (pick g (List.length others)) in
+    let bal = Hashtbl.find_exn g.balances payer in
+    let amount = round10 (50 + pick g (Int.min 400 (bal - 50))) in
+    let id = Printf.sprintf "p%d" (List.length g.payments + 1) in
+    Hashtbl.set g.balances ~key:payer ~data:(bal - amount);
+    g.payments
+    <- g.payments @ [ id, { m_payer = payer; m_payee = payee; m_authorized = amount; m_captured = 0; m_refunded = 0; m_closed = false } ];
+    issue g (Payments.Authorize { key = next_key g; payment = id; payer; payee; amount })
+;;
+
+let open_with_remaining g = List.filter g.payments ~f:(fun (_, p) -> (not p.m_closed) && p.m_authorized - p.m_captured > 0)
+
+let capture g =
+  match open_with_remaining g with
+  | [] -> false
+  | cands ->
+    let id, p = List.nth_exn cands (pick g (List.length cands)) in
+    let remaining = p.m_authorized - p.m_captured in
+    let amount = if remaining > 10 && pick g 10 < 7 then round10 (remaining / 2) else remaining in
+    p.m_captured <- p.m_captured + amount;
+    Hashtbl.update g.balances p.m_payee ~f:(fun v -> Option.value v ~default:0 + amount);
+    issue g (Payments.Capture { key = next_key g; payment = id; amount })
+;;
+
+let refund g =
+  let cands =
+    List.filter g.payments ~f:(fun (_, p) ->
+      p.m_captured - p.m_refunded >= 10 && Hashtbl.find_exn g.balances p.m_payee >= p.m_captured - p.m_refunded)
   in
-  let names = [ "alice"; "bob"; "carol"; "dave" ] in
-  let opening = [ 1000; 800; 600; 400 ] in
-  let balances = Hashtbl.create (module String) in
-  List.iter2_exn names opening ~f:(fun n b -> Hashtbl.set balances ~key:n ~data:b);
-  let payments : (string * model_payment) list ref = ref [] in
-  let keys = ref 0 in
-  let next_key () =
-    Int.incr keys;
-    Printf.sprintf "k%d" !keys
-  in
-  let issued : Payments.command list ref = ref [] in
-  let round10 x = Int.max 10 (x / 10 * 10) in
-  let commands = ref (List.map2_exn names opening ~f:(fun name balance -> Payments.Open_account { name; balance })) in
-  let emit c = commands := c :: !commands in
-  let authorize () =
-    let payers = List.filter names ~f:(fun n -> Hashtbl.find_exn balances n >= 60) in
-    match payers with
-    | [] -> false
-    | _ ->
-      let payer = List.nth_exn payers (pick (List.length payers)) in
-      let others = List.filter names ~f:(fun n -> not (String.equal n payer)) in
-      let payee = List.nth_exn others (pick (List.length others)) in
-      let bal = Hashtbl.find_exn balances payer in
-      let amount = round10 (50 + pick (Int.min 400 (bal - 50))) in
-      let id = Printf.sprintf "p%d" (List.length !payments + 1) in
-      Hashtbl.set balances ~key:payer ~data:(bal - amount);
-      payments := !payments @ [ id, { m_payer = payer; m_payee = payee; m_authorized = amount; m_captured = 0; m_refunded = 0; m_closed = false } ];
-      let c = Payments.Authorize { key = next_key (); payment = id; payer; payee; amount } in
-      issued := c :: !issued;
-      emit c;
-      true
-  in
-  let open_with_remaining () = List.filter !payments ~f:(fun (_, p) -> (not p.m_closed) && p.m_authorized - p.m_captured > 0) in
-  let capture () =
-    match open_with_remaining () with
-    | [] -> false
-    | cands ->
-      let id, p = List.nth_exn cands (pick (List.length cands)) in
-      let remaining = p.m_authorized - p.m_captured in
-      let amount = if remaining > 10 && pick 10 < 7 then round10 (remaining / 2) else remaining in
-      p.m_captured <- p.m_captured + amount;
-      Hashtbl.update balances p.m_payee ~f:(fun v -> Option.value v ~default:0 + amount);
-      let c = Payments.Capture { key = next_key (); payment = id; amount } in
-      issued := c :: !issued;
-      emit c;
-      true
-  in
-  let refund () =
-    let cands =
-      List.filter !payments ~f:(fun (_, p) ->
-        p.m_captured - p.m_refunded >= 10 && Hashtbl.find_exn balances p.m_payee >= p.m_captured - p.m_refunded)
+  match cands with
+  | [] -> false
+  | _ ->
+    let id, p = List.nth_exn cands (pick g (List.length cands)) in
+    let refundable = p.m_captured - p.m_refunded in
+    let amount = if refundable > 10 && pick g 2 = 0 then round10 (refundable / 2) else refundable in
+    p.m_refunded <- p.m_refunded + amount;
+    Hashtbl.update g.balances p.m_payee ~f:(fun v -> Option.value v ~default:0 - amount);
+    Hashtbl.update g.balances p.m_payer ~f:(fun v -> Option.value v ~default:0 + amount);
+    issue g (Payments.Refund { key = next_key g; payment = id; amount })
+;;
+
+let void g =
+  match List.filter g.payments ~f:(fun (_, p) -> not p.m_closed) with
+  | [] -> false
+  | cands ->
+    let id, p = List.nth_exn cands (pick g (List.length cands)) in
+    p.m_closed <- true;
+    (* the model releases only the remainder — what a correct system does *)
+    Hashtbl.update g.balances p.m_payer ~f:(fun v -> Option.value v ~default:0 + (p.m_authorized - p.m_captured));
+    issue g (Payments.Void { key = next_key g; payment = id })
+;;
+
+let retry g =
+  match g.issued with
+  | [] -> false
+  | cs ->
+    (* a redelivery of an earlier command, same idempotency key *)
+    emit g (List.nth_exn cs (pick g (Int.min 6 (List.length cs))));
+    true
+;;
+
+(* one command per step, rolled by weight; when the roll finds nothing to do,
+   an authorization or a capture almost always can *)
+let rec fill g n =
+  if n <= 0
+  then ()
+  else (
+    let roll = pick g 100 in
+    let done_ =
+      if roll < 34 then authorize g
+      else if roll < 64 then capture g
+      else if roll < 74 then refund g
+      else if roll < 90 then void g
+      else retry g
     in
-    match cands with
-    | [] -> false
-    | _ ->
-      let id, p = List.nth_exn cands (pick (List.length cands)) in
-      let refundable = p.m_captured - p.m_refunded in
-      let amount = if refundable > 10 && pick 2 = 0 then round10 (refundable / 2) else refundable in
-      p.m_refunded <- p.m_refunded + amount;
-      Hashtbl.update balances p.m_payee ~f:(fun v -> Option.value v ~default:0 - amount);
-      Hashtbl.update balances p.m_payer ~f:(fun v -> Option.value v ~default:0 + amount);
-      let c = Payments.Refund { key = next_key (); payment = id; amount } in
-      issued := c :: !issued;
-      emit c;
-      true
+    let done_ = done_ || authorize g || capture g in
+    fill g (if done_ then n - 1 else n))
+;;
+
+let scenario ~seed ~length =
+  let g =
+    { rng = Rng.create seed
+    ; balances = Hashtbl.create (module String)
+    ; payments = []
+    ; keys = 0
+    ; issued = []
+    ; commands = List.map2_exn names opening ~f:(fun name balance -> Payments.Open_account { name; balance })
+    }
   in
-  let void () =
-    match List.filter !payments ~f:(fun (_, p) -> not p.m_closed) with
-    | [] -> false
-    | cands ->
-      let id, p = List.nth_exn cands (pick (List.length cands)) in
-      p.m_closed <- true;
-      (* the model releases only the remainder — what a correct system does *)
-      Hashtbl.update balances p.m_payer ~f:(fun v -> Option.value v ~default:0 + (p.m_authorized - p.m_captured));
-      let c = Payments.Void { key = next_key (); payment = id } in
-      issued := c :: !issued;
-      emit c;
-      true
-  in
-  let retry () =
-    match !issued with
-    | [] -> false
-    | cs ->
-      (* a redelivery of an earlier command, same idempotency key *)
-      emit (List.nth_exn cs (pick (Int.min 6 (List.length cs))));
-      true
-  in
-  let rec fill n =
-    if n <= 0
-    then ()
-    else (
-      let roll = pick 100 in
-      let done_ =
-        if roll < 34 then authorize ()
-        else if roll < 64 then capture ()
-        else if roll < 74 then refund ()
-        else if roll < 90 then void ()
-        else retry ()
-      in
-      let done_ = done_ || authorize () || capture () in
-      fill (if done_ then n - 1 else n))
-  in
-  fill (Int.max 0 (length - List.length names));
-  List.rev !commands
+  List.iter2_exn names opening ~f:(fun n b -> Hashtbl.set g.balances ~key:n ~data:b);
+  fill g (Int.max 0 (length - List.length names));
+  List.rev g.commands
 ;;
 
 let scenario_json ~seed ~length =
