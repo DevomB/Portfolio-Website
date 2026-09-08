@@ -117,38 +117,52 @@ def measure(sha: str) -> dict:
         shutil.rmtree(wt, ignore_errors=True)
 
 
+def load_previous(version: str, rebuild: bool) -> dict[str, dict]:
+    """Points already scored under this exact toolchain, by sha. Empty when
+    rebuilding or when the file was written by a different toolchain."""
+    if rebuild or not OUT.exists():
+        return {}
+    existing = json.loads(OUT.read_text(encoding="utf-8"))
+    if existing.get("tool") == version:
+        return {p["sha"]: p for p in existing.get("points", [])}
+    print(f"toolchain changed ({existing.get('tool')!r} -> {version!r}); re-scoring every commit", flush=True)
+    return {}
+
+
+def writer(version: str, branch: str):
+    """The save function: written after EVERY commit, so a crash or Ctrl-C keeps
+    the progress and the next run picks up where this one stopped."""
+    def save(points: list[dict]) -> None:
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        doc = {
+            "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "tool": version,
+            "repo": "DevomB/Portfoilo-Website",
+            "branch": branch,
+            "points": points,
+        }
+        OUT.write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8")
+    return save
+
+
+def score(c: dict, label: str) -> dict:
+    """One commit's point. A commit tectonix cannot score becomes a gap, not a crash."""
+    print(f"{label} {c['sha'][:7]} {c['subject'][:60]}", flush=True)
+    try:
+        m = measure(c["sha"])
+    except Exception as exc:
+        print(f"    ! {exc}", file=sys.stderr, flush=True)
+        m = {"signal": None, "bottleneck": None}
+    print(f"    signal {m.get('signal')}  bottleneck {m.get('bottleneck')}", flush=True)
+    return {"sha": c["sha"], "short": c["sha"][:7], "date": c["date"], "subject": c["subject"], **m}
+
+
 def main() -> int:
-    rebuild = "--all" in sys.argv
     version = tool_stamp()
-    previous: dict[str, dict] = {}
-    if OUT.exists() and not rebuild:
-        existing = json.loads(OUT.read_text(encoding="utf-8"))
-        if existing.get("tool") == version:
-            for p in existing.get("points", []):
-                previous[p["sha"]] = p
-        else:
-            print(f"toolchain changed ({existing.get('tool')!r} -> {version!r}); re-scoring every commit", flush=True)
+    previous = load_previous(version, "--all" in sys.argv)
     # CI checks out a detached ref; let it name the branch explicitly
     branch = os.environ.get("TECTONIX_HISTORY_BRANCH") or git("rev-parse", "--abbrev-ref", "HEAD").strip()
-
-    def save(points: list[dict]) -> None:
-        # written after EVERY commit, so a crash or Ctrl-C keeps the progress
-        # and the next run picks up where this one stopped
-        OUT.parent.mkdir(parents=True, exist_ok=True)
-        OUT.write_text(
-            json.dumps(
-                {
-                    "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                    "tool": version,
-                    "repo": "DevomB/Portfoilo-Website",
-                    "branch": branch,
-                    "points": points,
-                },
-                indent=1,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
+    save = writer(version, branch)
 
     todo = commits()
     points: list[dict] = []
@@ -156,14 +170,7 @@ def main() -> int:
         if c["sha"] in previous:
             points.append(previous[c["sha"]])
             continue
-        print(f"[{i}/{len(todo)}] {c['sha'][:7]} {c['subject'][:60]}", flush=True)
-        try:
-            m = measure(c["sha"])
-        except Exception as exc:  # keep going; a bad commit becomes a gap, not a crash
-            print(f"    ! {exc}", file=sys.stderr, flush=True)
-            m = {"signal": None, "bottleneck": None}
-        points.append({"sha": c["sha"], "short": c["sha"][:7], "date": c["date"], "subject": c["subject"], **m})
-        print(f"    signal {m.get('signal')}  bottleneck {m.get('bottleneck')}", flush=True)
+        points.append(score(c, f"[{i}/{len(todo)}]"))
         save(points)
 
     save(points)

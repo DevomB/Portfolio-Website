@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import os from "node:os";
 import type { PokerCalculations } from "poker-calculations";
-import { bad, engineUnavailable, loadNative } from "@/app/(poker)/api/poker/engine";
+import { bad, engineUnavailable, loadNative, readRange } from "@/app/(poker)/api/poker/engine";
 import { canonicalizeHand, mulberry32, simulateEquityMonteCarloJs } from "@/app/(poker)/poker";
 import { cellOf, classCombos, classLabel, liveCombos } from "@/app/(poker)/handMatrix";
 
@@ -59,9 +59,44 @@ type Result = {
   ms: number;
 };
 
+// ── the memo: an LRU of finished terrains ──────────────────────────────────
 const cache = new Map<string, Result>();
 const CACHE_MAX = 512;
 
+function cached(key: string): Result | undefined {
+  const hit = cache.get(key);
+  if (hit) { cache.delete(key); cache.set(key, hit); } // a hit moves to the back
+  return hit;
+}
+
+function remember(key: string, result: Result): void {
+  cache.set(key, result);
+  if (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value as string);
+}
+
+// ── the request ────────────────────────────────────────────────────────────
+type LandscapeParams = { board: string[]; villains: Opponent; iters: number; weights: number[] | null };
+
+/** Validate the request body: the params, or the 400 to send instead. */
+function readParams(body: unknown): LandscapeParams | NextResponse {
+  const { board: rawBoard, villains: rawVillains, iters: rawIters, range: rawRange } = (body ?? {}) as Record<string, unknown>;
+  if (!Array.isArray(rawBoard) || !rawBoard.every((c) => typeof c === "string")) return bad("board must be an array of card codes.");
+  if (![0, 3, 4, 5].includes(rawBoard.length)) return bad("board must have 0, 3, 4 or 5 cards.");
+  let board: string[];
+  try { board = canonicalizeHand(rawBoard as string[]); } catch (e) { return bad((e as Error).message); }
+
+  const villains: Opponent = rawVillains === "range" ? "range" : typeof rawVillains === "number" && [1, 2, 3].includes(rawVillains) ? (rawVillains as 1 | 2 | 3) : 1;
+  const iters = typeof rawIters === "number" && Number.isFinite(rawIters) ? Math.min(MAX_ITERS, Math.max(100, Math.floor(rawIters))) : DEFAULT_ITERS;
+  let weights: number[] | null = null;
+  if (villains === "range") {
+    const r = readRange(rawRange);
+    if (r instanceof NextResponse) return r;
+    weights = r;
+  }
+  return { board, villains, iters, weights };
+}
+
+// ── against a painted range, before the river: sampled showdowns ───────────
 type Combo = { a: number; b: number; w: number };
 
 /** Villain's range as concrete combos with weights, minus the board. */
@@ -81,134 +116,143 @@ function rangeCombosOf(weights: number[], board: string[]): Combo[] {
   return out;
 }
 
-/** Monte Carlo equity of one hero combo against a weighted range. The villain
-    combo (by weight, never sharing a card with hero) and the runout are
-    sampled here; every showdown is scored by the engine's batch evaluator.
-    Deterministic per seed. NaN when hero blocks the whole range. */
-function mcVsRange(
-  native: PokerCalculations,
-  heroA: number,
-  heroB: number,
-  boardIds: number[],
-  villains: Combo[],
-  sims: number,
-  seed: number,
-): number {
-  const live = villains.filter((v) => v.a !== heroA && v.a !== heroB && v.b !== heroA && v.b !== heroB);
-  if (live.length === 0) return NaN;
+/** What one estimate against the range needs besides the hero. */
+type RangeSim = { native: PokerCalculations; boardIds: number[]; villains: Combo[]; sims: number };
+type Showdowns = { holesH: Uint8Array; holesV: Uint8Array; boards: Uint8Array };
+
+/** Index of the first cumulative weight at or above `u` (binary search). */
+function pickByWeight(cum: Float64Array, u: number): number {
+  let lo = 0, hi = cum.length - 1;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (cum[mid]! < u) lo = mid + 1; else hi = mid; }
+  return lo;
+}
+
+/** `need` board cards drawn without replacement from the pool, never villain's two. */
+function runout(pool: number[], need: number, v: Combo, rng: () => number): number[] {
+  const out: number[] = [];
+  for (let t = 0; out.length < need; t++) {
+    const idx = t + Math.floor(rng() * (pool.length - t));
+    const c = pool[idx]!; pool[idx] = pool[t]!; pool[t] = c;
+    if (c !== v.a && c !== v.b) out.push(c);
+  }
+  return out;
+}
+
+/** Sample the showdowns: the villain combo by weight (never sharing a card
+    with hero), the runout without replacement. Null when hero blocks the
+    whole range. */
+function sampleShowdowns(sim: RangeSim, hero: [number, number], rng: () => number): Showdowns | null {
+  const [heroA, heroB] = hero;
+  const live = sim.villains.filter((v) => v.a !== heroA && v.a !== heroB && v.b !== heroA && v.b !== heroB);
+  if (live.length === 0) return null;
   const cum = new Float64Array(live.length);
   let total = 0;
   for (let i = 0; i < live.length; i++) { total += live[i]!.w; cum[i] = total; }
-  const rng = mulberry32(seed);
+
+  const { sims, boardIds } = sim;
   const holesH = new Uint8Array(2 * sims), holesV = new Uint8Array(2 * sims), boards = new Uint8Array(5 * sims);
   const known = new Set([heroA, heroB, ...boardIds]);
   const pool: number[] = [];
   for (let c = 0; c < 52; c++) if (!known.has(c)) pool.push(c);
   for (let s = 0; s < sims; s++) {
-    // villain combo by cumulative weight
-    const u = rng() * total;
-    let lo = 0, hi = live.length - 1;
-    while (lo < hi) { const mid = (lo + hi) >> 1; if (cum[mid]! < u) lo = mid + 1; else hi = mid; }
-    const v = live[lo]!;
+    const v = live[pickByWeight(cum, rng() * total)]!;
     holesH[2 * s] = heroA; holesH[2 * s + 1] = heroB;
     holesV[2 * s] = v.a; holesV[2 * s + 1] = v.b;
-    for (let k = 0; k < boardIds.length; k++) boards[5 * s + k] = boardIds[k]!;
-    // runout: draw without replacement from the pool, skipping villain's two cards
-    let filled = boardIds.length;
-    for (let t = 0; filled < 5; t++) {
-      const idx = t + Math.floor(rng() * (pool.length - t));
-      const c = pool[idx]!; pool[idx] = pool[t]!; pool[t] = c;
-      if (c === v.a || c === v.b) continue;
-      boards[5 * s + filled] = c; filled++;
-    }
+    boards.set(boardIds, 5 * s);
+    boards.set(runout(pool, 5 - boardIds.length, v, rng), 5 * s + boardIds.length);
   }
-  const sh = native.evaluateHandStrengthFastBatch(holesH, boards, 5);
-  const sv = native.evaluateHandStrengthFastBatch(holesV, boards, 5);
+  return { holesH, holesV, boards };
+}
+
+/** Monte Carlo equity of one hero combo against the weighted range, every
+    showdown scored by the engine's batch evaluator. Deterministic per seed.
+    NaN when hero blocks the whole range. */
+function mcVsRange(sim: RangeSim, hero: [number, number], seed: number): number {
+  const s = sampleShowdowns(sim, hero, mulberry32(seed));
+  if (!s) return NaN;
+  const sh = sim.native.evaluateHandStrengthFastBatch(s.holesH, s.boards, 5);
+  const sv = sim.native.evaluateHandStrengthFastBatch(s.holesV, s.boards, 5);
   let eq = 0;
-  for (let s = 0; s < sims; s++) eq += sh[s]! > sv[s]! ? 1 : sh[s] === sv[s] ? 0.5 : 0;
-  return eq / sims;
+  for (let i = 0; i < sim.sims; i++) eq += sh[i]! > sv[i]! ? 1 : sh[i] === sv[i] ? 0.5 : 0;
+  return eq / sim.sims;
+}
+
+// ── one request, 169 classes ───────────────────────────────────────────────
+/** Everything the per-class estimates share for one request. */
+type Run = {
+  p: LandscapeParams;
+  key: string;
+  native: PokerCalculations | null;
+  boardIds: number[];
+  combos: Combo[] | null;
+  dense: ReturnType<PokerCalculations["rangeFromNotationWeights"]> | null;
+  method: Method;
+};
+
+/** Equity of one concrete hero combo by whichever method the request calls for. */
+function heroEquity(run: Run, hero: [string, string], seed: number, per: number): number {
+  const { p, native } = run;
+  if (p.villains === "range") {
+    return run.dense
+      ? native!.exactHuEquityVsRange(hero, p.board, run.dense)
+      : mcVsRange({ native: native!, boardIds: run.boardIds, villains: run.combos!, sims: p.iters }, [cardId(hero[0]), cardId(hero[1])], seed);
+  }
+  return native
+    ? native.parallelHandSimulation(hero, p.board, per, seed, p.villains, THREADS)
+    : simulateEquityMonteCarloJs(hero, p.board, per, seed); // fallback is heads-up only
+}
+
+/** Equity of a class: up to two representatives spread across suit patterns, the budget split between them. */
+function classEquity(run: Run, k: number): number | null {
+  const { i, j } = cellOf(k);
+  const live = liveCombos(i, j, run.p.board);
+  if (live.length === 0) return null;
+  const reps = live.length > 1 ? [live[0]!, live[Math.floor(live.length / 2)]!] : [live[0]!];
+  const per = Math.ceil(run.p.iters / reps.length);
+  let acc = 0, n = 0;
+  reps.forEach((hero, r) => {
+    const e = heroEquity(run, hero, seedFor(`${k}|${r}|${run.key}`), per);
+    if (Number.isFinite(e)) { acc += e; n++; }
+  });
+  return n ? acc / n : null;
 }
 
 export async function POST(req: Request) {
   let body: unknown;
   try { body = await req.json(); } catch { return bad("Invalid JSON body."); }
-  const { board: rawBoard, villains: rawVillains, iters: rawIters, range: rawRange } = (body ?? {}) as Record<string, unknown>;
+  const p = readParams(body);
+  if (p instanceof NextResponse) return p;
 
-  if (!Array.isArray(rawBoard) || !rawBoard.every((c) => typeof c === "string")) return bad("board must be an array of card codes.");
-  if (![0, 3, 4, 5].includes(rawBoard.length)) return bad("board must have 0, 3, 4 or 5 cards.");
-  let board: string[];
-  try { board = canonicalizeHand(rawBoard as string[]); } catch (e) { return bad((e as Error).message); }
-
-  const villains: Opponent = rawVillains === "range" ? "range" : typeof rawVillains === "number" && [1, 2, 3].includes(rawVillains) ? (rawVillains as 1 | 2 | 3) : 1;
-  const iters = typeof rawIters === "number" && Number.isFinite(rawIters) ? Math.min(MAX_ITERS, Math.max(100, Math.floor(rawIters))) : DEFAULT_ITERS;
-
-  let weights: number[] | null = null;
-  if (villains === "range") {
-    if (!Array.isArray(rawRange) || rawRange.length !== 169 || !rawRange.every((w) => typeof w === "number")) return bad("range must be 169 class weights.");
-    weights = (rawRange as number[]).map((w) => Math.min(1, Math.max(0, w)));
-    if (weights.every((w) => w === 0)) return bad("villain range is empty.");
-  }
-
-  const key = `${[...board].sort().join(",")}|${villains}|${iters}|${weights ? seedFor(weights.join(",")) : ""}`;
-  const hit = cache.get(key);
-  if (hit) {
-    cache.delete(key);
-    cache.set(key, hit);
-    return NextResponse.json({ ...hit, cached: true });
-  }
+  const key = `${[...p.board].sort().join(",")}|${p.villains}|${p.iters}|${p.weights ? seedFor(p.weights.join(",")) : ""}`;
+  const hit = cached(key);
+  if (hit) return NextResponse.json({ ...hit, cached: true });
 
   const native = await loadNative();
-  if (!native && villains === "range") return engineUnavailable();
+  if (!native && p.villains === "range") return engineUnavailable();
   const t0 = performance.now();
-  const equities: (number | null)[] = new Array(169).fill(null);
-
-  const boardIds = board.map(cardId);
-  const river = board.length === 5;
-  const method: Method = villains === "range" ? (river ? "exact-range" : "mc-range") : "mc-random";
-  const combos = weights ? rangeCombosOf(weights, board) : null;
-  // the engine's own range for the river: dense weights by notation, blockers handled inside
-  const dense = weights && river && native
-    ? native.rangeFromNotationWeights(weights.flatMap((w, k) => (w > 0 ? [{ notation: classLabel(cellOf(k).i, cellOf(k).j), weight: w }] : [])))
-    : null;
-
-  for (let k = 0; k < 169; k++) {
-    const { i, j } = cellOf(k);
-    const live = liveCombos(i, j, board);
-    if (live.length === 0) continue;
-    // two representatives spread across suit patterns, budget split between them
-    const reps = live.length > 1 ? [live[0]!, live[Math.floor(live.length / 2)]!] : [live[0]!];
-    const per = Math.ceil(iters / reps.length);
-    let acc = 0, n = 0;
-    for (let r = 0; r < reps.length; r++) {
-      const seed = seedFor(`${k}|${r}|${key}`);
-      const hero = reps[r]!;
-      let e: number;
-      if (villains === "range") {
-        e = dense
-          ? native!.exactHuEquityVsRange(hero, board, dense)
-          : mcVsRange(native!, cardId(hero[0]), cardId(hero[1]), boardIds, combos!, iters, seed);
-      } else {
-        e = native
-          ? native.parallelHandSimulation(hero, board, per, seed, villains, THREADS)
-          : simulateEquityMonteCarloJs(hero, board, per, seed); // fallback is heads-up only
-      }
-      if (Number.isFinite(e)) { acc += e; n++; }
-    }
-    equities[k] = n ? acc / n : null;
-  }
+  const river = p.board.length === 5;
+  const method: Method = p.villains === "range" ? (river ? "exact-range" : "mc-range") : "mc-random";
+  const run: Run = {
+    p, key, native, method,
+    boardIds: p.board.map(cardId),
+    combos: p.weights ? rangeCombosOf(p.weights, p.board) : null,
+    // the engine's own range for the river: dense weights by notation, blockers handled inside
+    dense: p.weights && river && native
+      ? native.rangeFromNotationWeights(p.weights.flatMap((w, k) => (w > 0 ? [{ notation: classLabel(cellOf(k).i, cellOf(k).j), weight: w }] : [])))
+      : null,
+  };
 
   const result: Result = {
-    equities,
-    board,
-    villains: native ? villains : 1,
-    iters,
+    equities: Array.from({ length: 169 }, (_, k) => classEquity(run, k)),
+    board: p.board,
+    villains: native ? p.villains : 1,
+    iters: p.iters,
     engine: native ? "native" : "js",
     method,
     threads: native && method === "mc-random" ? THREADS : 1,
-    rangeCombos: combos ? combos.length : null,
+    rangeCombos: run.combos ? run.combos.length : null,
     ms: Math.round(performance.now() - t0),
   };
-  cache.set(key, result);
-  if (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value as string);
+  remember(key, result);
   return NextResponse.json({ ...result, cached: false });
 }

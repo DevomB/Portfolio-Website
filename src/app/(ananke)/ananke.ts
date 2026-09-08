@@ -47,6 +47,12 @@ export const field = (line: string, name: string) => new RegExp(`\\(${name} ([^)
 
 /** Human-readable differences between two states (the page's own reading; Ananke's structural diff counts changes by path). */
 export function describeChanges(a: State | null, b: State): string[] {
+  const out = [...accountChanges(a, b), ...paymentChanges(a, b)];
+  if (a && a.keys !== b.keys && out.length === 0) out.push("a new idempotency key, nothing else");
+  return out;
+}
+
+function accountChanges(a: State | null, b: State): string[] {
   const out: string[] = [];
   for (const [name, acc] of Object.entries(b.accounts)) {
     const prev = a?.accounts[name];
@@ -54,6 +60,11 @@ export function describeChanges(a: State | null, b: State): string[] {
     if (prev.balance !== acc.balance) out.push(`${name} balance ${prev.balance} → ${acc.balance}`);
     if (prev.held !== acc.held) out.push(`${name} held ${prev.held} → ${acc.held}`);
   }
+  return out;
+}
+
+function paymentChanges(a: State | null, b: State): string[] {
+  const out: string[] = [];
   for (const [id, p] of Object.entries(b.payments)) {
     const prev = a?.payments[id];
     if (!prev) { out.push(`${id}: ${p.payer} → ${p.payee}, ${p.authorized} authorized`); continue; }
@@ -61,6 +72,5 @@ export function describeChanges(a: State | null, b: State): string[] {
     if (prev.refunded !== p.refunded) out.push(`${id} refunded ${prev.refunded} → ${p.refunded}`);
     if (prev.closed !== p.closed) out.push(`${id} ${p.closed ? "closed" : "reopened"}`);
   }
-  if (a && a.keys !== b.keys && out.length === 0) out.push("a new idempotency key, nothing else");
   return out;
 }

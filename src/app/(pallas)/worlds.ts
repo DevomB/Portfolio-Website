@@ -34,11 +34,13 @@ export const WORLDS: { key: WorldKind; label: string; blurb: string }[] = [
 export const phiOf = (kind: WorldKind, strength: number) =>
   kind === "noise" ? 0 : (kind === "trend" ? 1 : -1) * PHI_MAX * clamp(strength, 0, 1);
 
-export function makeWorld(seed: number, kind: WorldKind, strength: number, n = WORLD_BARS, start = 100): number[] {
+const START_PRICE = 100;
+
+export function makeWorld(seed: number, kind: WorldKind, strength: number, n = WORLD_BARS): number[] {
   const rng = mulberry32(seed >>> 0);
   const phi = phiOf(kind, strength);
   const sigma = (0.18 / Math.sqrt(252)) * Math.sqrt(1 - phi * phi);
-  const closes = [start];
+  const closes = [START_PRICE];
   let prev = 0;
   for (let i = 1; i < n; i++) {
     const r = phi * prev + sigma * normal(rng);

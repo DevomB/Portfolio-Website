@@ -32,6 +32,10 @@ export type Sizes = { pot: number; bet: number; raiseTo: number };
 
 export type VillainCombo = { strength: number; weight: number };
 
+/** Hero's combo at the table: its strength, villain's arriving combos that do
+    not share a card with it (ascending by strength), and the money. */
+export type Spot = { hero: number; villains: VillainCombo[]; sizes: Sizes };
+
 export type ActionEvs = {
   evFold: number;
   evCall: number;
@@ -81,9 +85,10 @@ export function bettingRange(sortedAsc: VillainCombo[], policy: Policy): { bet: 
   return { bet, fold };
 }
 
-/** Hero's action values against a betting range. `sortedAsc` ascending by strength. */
-export function actionEvs(heroStrength: number, sortedAsc: VillainCombo[], policy: Policy, sizes: Sizes): ActionEvs {
-  const { pot: P, bet: B, raiseTo: R } = sizes;
+/** Hero's action values against the betting range villain's policy produces at this spot. */
+export function actionEvs(spot: Spot, policy: Policy): ActionEvs {
+  const { hero: heroStrength, villains: sortedAsc } = spot;
+  const { pot: P, bet: B, raiseTo: R } = spot.sizes;
   const { bet, fold } = bettingRange(sortedAsc, policy);
   let W = 0, win = 0, tie = 0, foldW = 0, calledW = 0, winC = 0, tieC = 0;
   let evCall = 0, evRaise = 0;
@@ -123,14 +128,14 @@ export type Flip = { param: keyof Policy; from: number; to: number; newBest: Act
 
 /** "How wrong can my read be?" — for each policy dial, the nearest value at which
     the preferred action changes. Scanned on a fine grid in both directions. */
-export function nearestFlips(heroStrength: number, sortedAsc: VillainCombo[], policy: Policy, sizes: Sizes, steps = 100): Flip[] {
-  const base = actionEvs(heroStrength, sortedAsc, policy, sizes).best;
+export function nearestFlips(spot: Spot, policy: Policy, steps = 100): Flip[] {
+  const base = actionEvs(spot, policy).best;
   const out: Flip[] = [];
   for (const param of ["valueFrac", "bluffFreq", "foldToRaise"] as const) {
     let nearest: Flip | null = null;
     for (let k = 0; k <= steps; k++) {
       const v = k / steps;
-      const b = actionEvs(heroStrength, sortedAsc, { ...policy, [param]: v }, sizes).best;
+      const b = actionEvs(spot, { ...policy, [param]: v }).best;
       if (b !== base) {
         const d = Math.abs(v - policy[param]);
         if (!nearest || d < Math.abs(nearest.to - policy[param])) nearest = { param, from: policy[param], to: v, newBest: b };
@@ -150,17 +155,17 @@ export type Robust = {
 
 /** Compare the action that is best at the stated read with the action whose
     WORST case across a ±band on every dial is best (maximin). */
-export function robustChoice(heroStrength: number, sortedAsc: VillainCombo[], policy: Policy, sizes: Sizes, band = 0.15, grid = 5): Robust {
+export function robustChoice(spot: Spot, policy: Policy, band = 0.15, grid = 5): Robust {
   const worst: Record<ActionEvs["best"], number> = { fold: 0, call: Infinity, raise: Infinity };
   const axis = (c: number) => Array.from({ length: grid }, (_, i) => clamp01(c - band + (2 * band * i) / (grid - 1)));
   for (const v of axis(policy.valueFrac))
     for (const b of axis(policy.bluffFreq))
       for (const f of axis(policy.foldToRaise)) {
-        const e = actionEvs(heroStrength, sortedAsc, { valueFrac: v, bluffFreq: b, foldToRaise: f }, sizes);
+        const e = actionEvs(spot, { valueFrac: v, bluffFreq: b, foldToRaise: f });
         worst.call = Math.min(worst.call, e.evCall);
         worst.raise = Math.min(worst.raise, e.evRaise);
       }
-  const exploitative = actionEvs(heroStrength, sortedAsc, policy, sizes).best;
+  const exploitative = actionEvs(spot, policy).best;
   const robust = (Object.keys(worst) as ActionEvs["best"][]).sort((a, b) => worst[b] - worst[a])[0]!;
   return { band, exploitative, robust, worstCase: worst };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { actionEvs, bettingRange, nearestFlips, robustChoice, type Policy, type Sizes, type VillainCombo } from "@/app/(poker)/riverModel";
+import { actionEvs, bettingRange, nearestFlips, robustChoice, type Policy, type Sizes, type Spot, type VillainCombo } from "@/app/(poker)/riverModel";
 
 /* Two villain combos, one hero: small enough to check every number by hand
    against the payoff table at the top of riverModel.ts. */
@@ -7,8 +7,8 @@ const villains: VillainCombo[] = [
   { strength: 1, weight: 1 }, // hero beats this one
   { strength: 3, weight: 1 }, // this one beats hero
 ];
-const hero = 2;
 const sizes: Sizes = { pot: 100, bet: 50, raiseTo: 150 };
+const spot: Spot = { hero: 2, villains, sizes };
 /* villain value-bets its strongest half (strength 3) and bluffs everything
    left (strength 1); value never folds to a raise, bluffs always do */
 const policy: Policy = { valueFrac: 0.5, bluffFreq: 1, foldToRaise: 0 };
@@ -28,7 +28,7 @@ describe("bettingRange", () => {
 
 describe("actionEvs", () => {
   it("matches the payoff table", () => {
-    const e = actionEvs(hero, villains, policy, sizes);
+    const e = actionEvs(spot, policy);
     // call: win P+B against the bluff, lose B to the value hand, each half the time
     expect(e.evCall).toBeCloseTo((150 - 50) / 2, 10);
     // raise: the bluff folds (+P+B), the value hand calls and wins (−R)
@@ -44,13 +44,13 @@ describe("actionEvs", () => {
   });
 
   it("folds when villain never bets", () => {
-    const e = actionEvs(hero, villains, { valueFrac: 0, bluffFreq: 0, foldToRaise: 0 }, sizes);
+    const e = actionEvs(spot, { valueFrac: 0, bluffFreq: 0, foldToRaise: 0 });
     expect(e.best).toBe("fold");
     expect(e.bettingWeight).toBe(0);
   });
 
   it("raises when the value hand folds often enough", () => {
-    const e = actionEvs(hero, villains, { ...policy, foldToRaise: 1 }, sizes);
+    const e = actionEvs(spot, { ...policy, foldToRaise: 1 });
     expect(e.evRaise).toBeCloseTo(150, 10); // everything folds: +(P+B) every time
     expect(e.best).toBe("raise");
   });
@@ -58,7 +58,7 @@ describe("actionEvs", () => {
 
 describe("sensitivity", () => {
   it("finds the nearest fold-to-raise at which raising overtakes calling", () => {
-    const flips = nearestFlips(hero, villains, policy, sizes);
+    const flips = nearestFlips(spot, policy);
     const f = flips.find((x) => x.param === "foldToRaise")!;
     expect(f).toBeDefined();
     expect(f.newBest).toBe("raise");
@@ -69,11 +69,11 @@ describe("sensitivity", () => {
   });
 
   it("robustChoice reports the worst case of each action across the band", () => {
-    const r = robustChoice(hero, villains, policy, sizes, 0.15, 5);
+    const r = robustChoice(spot, policy, 0.15, 5);
     expect(r.band).toBe(0.15);
     expect(r.exploitative).toBe("call");
     expect(r.worstCase.fold).toBe(0);
-    expect(r.worstCase.call).toBeLessThanOrEqual(actionEvs(hero, villains, policy, sizes).evCall);
+    expect(r.worstCase.call).toBeLessThanOrEqual(actionEvs(spot, policy).evCall);
     expect(["fold", "call", "raise"]).toContain(r.robust);
   });
 });

@@ -48,13 +48,22 @@ function spawnRain(count: number, W: number, H: number): Particle[] {
   }));
 }
 
+/** the burst, plus the drizzle for big hands */
+function spawnAll(count: number, rain: boolean, W: number, H: number): Particle[] {
+  const burstCount = rain ? Math.floor(count * 0.7) : count;
+  return [...spawnBurst(burstCount, W, H), ...(rain ? spawnRain(count - burstCount, W, H) : [])];
+}
+
+/** what one frame applies to every particle */
+type Frame = { dt: number; slow: number; gravity: number };
+
 /** advance one particle by dt seconds under gravity, drag, and flutter */
-function stepParticle(p: Particle, age: number, dt: number, slow: number, gravity: number) {
-  p.vx *= slow;
-  p.vy = p.vy * slow + gravity * dt;
-  p.x += p.vx * dt + Math.sin(p.phase + age * p.freq) * p.amp * dt;
-  p.y += p.vy * dt;
-  p.rot += p.vr * dt;
+function stepParticle(p: Particle, age: number, f: Frame) {
+  p.vx *= f.slow;
+  p.vy = p.vy * f.slow + f.gravity * f.dt;
+  p.x += p.vx * f.dt + Math.sin(p.phase + age * p.freq) * p.amp * f.dt;
+  p.y += p.vy * f.dt;
+  p.rot += p.vr * f.dt;
 }
 
 /** draw one particle; cos gives the tumble a 3D read for free */
@@ -69,62 +78,77 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle, age: number, d
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-/** Size the canvas for the device, spawn the particles, run the animation
- *  loop until the last one leaves, and return the teardown. */
-function runConfetti(canvas: HTMLCanvasElement, count: number, rain: boolean, delayMs: number): () => void {
+type Stage = { ctx: CanvasRenderingContext2D; W: number; H: number; dpr: number };
+
+/** size the canvas for the device; null when there is no 2D context */
+function stageFor(canvas: HTMLCanvasElement): Stage | null {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
+  return { ctx, W, H, dpr };
+}
+
+/** run the animation loop until the last particle leaves (or five seconds); returns the stop */
+function animate(stage: Stage, particles: Particle[]): () => void {
+  const { ctx, W, H, dpr } = stage;
+  const gravity = 1.35 * H;   // px/s² — scaled so arcs read the same at any size
+  const drag = 0.9;           // per second
   let raf = 0;
   let stopped = false;
+  let last = performance.now();
+  const t0 = last;
 
+  const frame = (now: number) => {
+    if (stopped) return;
+    const dt = Math.min((now - last) / 1000, 1 / 30);
+    last = now;
+    const elapsed = (now - t0) / 1000;
+
+    ctx.clearRect(0, 0, W, H);
+    const f: Frame = { dt, slow: Math.pow(drag, dt), gravity }; // slow is loop-invariant per frame
+    let alive = 0;
+    for (const p of particles) {
+      const age = elapsed - p.born;
+      if (age < 0) { alive++; continue; }
+      if (age > p.life || p.y > H + 24) continue;
+      alive++;
+      stepParticle(p, age, f);
+      drawParticle(ctx, p, age, dpr);
+    }
+    ctx.globalAlpha = 1;
+
+    if (alive > 0 && elapsed < 5) raf = requestAnimationFrame(frame);
+    else ctx.clearRect(0, 0, W, H);
+  };
+  // first tick now, so the burst starts on the frame the timer fires
+  frame(performance.now());
+
+  return () => {
+    stopped = true;
+    cancelAnimationFrame(raf);
+  };
+}
+
+/** After `delayMs`: size the canvas, spawn the particles, animate. Returns the teardown. */
+function runConfetti(canvas: HTMLCanvasElement, count: number, rain: boolean, delayMs: number): () => void {
+  let cancel: (() => void) | null = null;
+  let stopped = false;
   const timer = setTimeout(() => {
     if (stopped) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const W = canvas.clientWidth;
-    const H = canvas.clientHeight;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = W * dpr;
-    canvas.height = H * dpr;
-    ctx.scale(dpr, dpr);
-
-    const burstCount = rain ? Math.floor(count * 0.7) : count;
-    const particles = [...spawnBurst(burstCount, W, H), ...(rain ? spawnRain(count - burstCount, W, H) : [])];
-
-    const gravity = 1.35 * H;   // px/s² — scaled so arcs read the same at any size
-    const drag = 0.9;           // per second
-    let last = performance.now();
-    const t0 = last;
-
-    const frame = (now: number) => {
-      if (stopped) return;
-      const dt = Math.min((now - last) / 1000, 1 / 30);
-      last = now;
-      const elapsed = (now - t0) / 1000;
-
-      ctx.clearRect(0, 0, W, H);
-      const slow = Math.pow(drag, dt); // loop-invariant per frame
-      let alive = 0;
-      for (const p of particles) {
-        const age = elapsed - p.born;
-        if (age < 0) { alive++; continue; }
-        if (age > p.life || p.y > H + 24) continue;
-        alive++;
-        stepParticle(p, age, dt, slow, gravity);
-        drawParticle(ctx, p, age, dpr);
-      }
-      ctx.globalAlpha = 1;
-
-      if (alive > 0 && elapsed < 5) raf = requestAnimationFrame(frame);
-      else ctx.clearRect(0, 0, W, H);
-    };
-    // first tick now, so the burst starts on the frame the timer fires
-    frame(performance.now());
+    const stage = stageFor(canvas);
+    if (!stage) return;
+    cancel = animate(stage, spawnAll(count, rain, stage.W, stage.H));
   }, delayMs);
 
   return () => {
     stopped = true;
     clearTimeout(timer);
-    cancelAnimationFrame(raf);
+    cancel?.();
   };
 }
 

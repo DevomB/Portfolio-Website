@@ -18,22 +18,31 @@ export function classLabel(i: number, j: number): string {
   return i < j ? a + b + "s" : b + a + "o";
 }
 
+type Combo = [string, string];
+
+/** the 6 ways to hold a pair of `r` */
+function pairCombos(r: string): Combo[] {
+  const out: Combo[] = [];
+  for (let a = 0; a < 4; a++) for (let b = a + 1; b < 4; b++) out.push([r + SUITS[a], r + SUITS[b]]);
+  return out;
+}
+
+/** the 4 suited combos of two ranks */
+const suitedCombos = (hi: string, lo: string): Combo[] => SUITS.map((s) => [hi + s, lo + s]);
+
+/** the 12 offsuit combos of two ranks */
+function offsuitCombos(hi: string, lo: string): Combo[] {
+  const out: Combo[] = [];
+  for (const s of SUITS) for (const t of SUITS) if (s !== t) out.push([hi + s, lo + t]);
+  return out;
+}
+
 /** Every concrete two-card combo in a class: 6 for pairs, 4 suited, 12 offsuit. */
-export function classCombos(i: number, j: number): [string, string][] {
-  const out: [string, string][] = [];
-  if (i === j) {
-    const r = MATRIX_RANKS[i]!;
-    for (let a = 0; a < 4; a++) for (let b = a + 1; b < 4; b++) out.push([r + SUITS[a], r + SUITS[b]]);
-    return out;
-  }
+export function classCombos(i: number, j: number): Combo[] {
+  if (i === j) return pairCombos(MATRIX_RANKS[i]!);
   const hi = MATRIX_RANKS[Math.min(i, j)]!;
   const lo = MATRIX_RANKS[Math.max(i, j)]!;
-  if (i < j) {
-    for (const s of SUITS) out.push([hi + s, lo + s]);
-  } else {
-    for (const s of SUITS) for (const t of SUITS) if (s !== t) out.push([hi + s, lo + t]);
-  }
-  return out;
+  return i < j ? suitedCombos(hi, lo) : offsuitCombos(hi, lo);
 }
 
 /** Combos of a class that do not collide with the cards on the board. */
