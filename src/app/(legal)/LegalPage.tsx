@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import Navbar from "@/app/(chrome)/Navbar";
 import Footer from "@/app/(chrome)/Footer";
+import { BackLink } from "@/app/(chrome)/DemoPage";
 
 /** Shared shell for the plain-language legal pages (/privacy, /terms). */
 export default function LegalPage({
@@ -20,15 +21,7 @@ export default function LegalPage({
       <Navbar />
       <main className="min-h-screen">
         <div className="page-shell">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 font-mono text-fluid-xs text-muted transition-colors hover:text-ink mb-8"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-            </svg>
-            back home
-          </Link>
+          <BackLink href="/">back home</BackLink>
 
           <header className="mb-10 max-w-2xl">
             <h1 className="font-title text-fluid-4xl font-bold tracking-tight text-ink">{title}</h1>
