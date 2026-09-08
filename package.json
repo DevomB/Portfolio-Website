@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "cross-env ESLINT_USE_FLAT_CONFIG=true eslint .",
+    "test": "vitest run",
     "tectonix:history": "python scripts/tectonix_history.py",
     "tectonix:pull": "python scripts/tectonix_pull.py",
     "wasm:pallas": "python scripts/build_pallas_arena.py",
@@ -33,6 +34,7 @@
     "cross-env": "^7.0.3",
     "eslint": "^9.18.0",
     "eslint-config-next": "^16.2.4",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
   }
 }
