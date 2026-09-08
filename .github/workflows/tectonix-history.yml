@@ -1,0 +1,143 @@
+# Tectonix vs this site, on every push.
+#
+# Scores each new first-parent commit of the pushed branch with the real
+# tectonix binary (scripts/tectonix_history.py, incremental) and publishes the
+# result to the `tectonix-history` data branch as history/<branch>.json. The
+# home page fetches that file server-side and revalidates every five minutes,
+# so the chart follows the repo without a bot ever committing to a code branch
+# — no doubled Vercel deploys, no noise in git log.
+#
+# The bundled src/app/(home)/tectonixHistory.json stays as the offline
+# fallback and seeds the data branch on the first run.
+
+name: tectonix-history
+
+on:
+  push:
+    branches: [main, redesign]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# one writer to the data branch at a time; later pushes queue, never cancel
+concurrency:
+  group: tectonix-history
+  cancel-in-progress: false
+
+env:
+  TECTONIX_REPO: https://github.com/DevomB/Tectonix
+  DATA_BRANCH: tectonix-history
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out with full history (first-parent walk + worktrees need it)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ── the analyser ──────────────────────────────────────────────────────
+      - name: Resolve the Tectonix commit (cache key for the binary)
+        id: tx
+        run: echo "sha=$(git ls-remote "$TECTONIX_REPO" HEAD | cut -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the built binary
+        id: bin
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/tectonix
+          key: tectonix-bin-${{ runner.os }}-${{ steps.tx.outputs.sha }}
+
+      - name: Rust toolchain (only when the binary is not cached)
+        if: steps.bin.outputs.cache-hit != 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build tectonix from DevomB/Tectonix
+        if: steps.bin.outputs.cache-hit != 'true'
+        run: cargo install --git "$TECTONIX_REPO" --locked --force
+
+      - name: Cache the grammar plugins tectonix downloads on first use
+        uses: actions/cache@v4
+        with:
+          path: ~/.tectonix
+          key: tectonix-plugins-${{ runner.os }}-${{ steps.tx.outputs.sha }}
+          restore-keys: tectonix-plugins-${{ runner.os }}-
+
+      - name: Verify
+        run: |
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/tectonix" --version
+
+      # ── previous results: incremental means only new commits are scored ──
+      - name: Fetch the data branch (may not exist yet)
+        run: |
+          mkdir -p history
+          if git fetch --depth 1 origin "$DATA_BRANCH" 2>/dev/null; then
+            git show "origin/$DATA_BRANCH:history/${{ github.ref_name }}.json" > "history/${{ github.ref_name }}.json" 2>/dev/null \
+              && echo "resumed from data branch" \
+              || { cp "src/app/(home)/tectonixHistory.json" "history/${{ github.ref_name }}.json"; echo "seeded from the bundled snapshot"; }
+          else
+            cp "src/app/(home)/tectonixHistory.json" "history/${{ github.ref_name }}.json"
+            echo "no data branch yet — seeded from the bundled snapshot"
+          fi
+
+      - name: Score the new commits
+        env:
+          TECTONIX_HISTORY_OUT: ${{ github.workspace }}/history/${{ github.ref_name }}.json
+          TECTONIX_HISTORY_BRANCH: ${{ github.ref_name }}
+        run: python scripts/tectonix_history.py
+
+      # ── publish: a single-file commit on the data branch, never on a code branch ──
+      - name: Publish to the data branch
+        env:
+          REF: ${{ github.ref_name }}
+        run: |
+          set -e
+          git config user.name  "tectonix-history[bot]"
+          git config user.email "tectonix-history@users.noreply.github.com"
+          rm -rf .data && mkdir .data
+          if git ls-remote --exit-code --heads origin "$DATA_BRANCH" >/dev/null 2>&1; then
+            git worktree add --quiet .data "origin/$DATA_BRANCH"
+            (cd .data && git checkout -q -B "$DATA_BRANCH")
+          else
+            git worktree add --quiet --detach .data
+            (cd .data && git checkout -q --orphan "$DATA_BRANCH" && git rm -rfq . >/dev/null 2>&1 || true)
+          fi
+          mkdir -p .data/history
+          cp "history/$REF.json" ".data/history/$REF.json"
+          # never let Vercel build this branch: it is data, not a site
+          printf '{ "git": { "deploymentEnabled": false } }\n' > .data/vercel.json
+          printf '# tectonix-history\n\nMachine-written by .github/workflows/tectonix-history.yml: the Tectonix quality signal of every first-parent commit, per branch, charted on devomb.com.\n' > .data/README.md
+          cd .data
+          git add -A
+          if git diff --cached --quiet; then echo "nothing new"; exit 0; fi
+          LAST=$(python3 -c "import json;p=json.load(open('history/$REF.json'))['points'];print(f\"{p[-1]['short']} -> {p[-1]['signal']}\")")
+          git commit -q -m "history($REF): $LAST"
+          # a second run may have landed in the meantime; retry on top of it
+          for i in 1 2 3; do
+            git push origin "HEAD:$DATA_BRANCH" && break
+            git fetch origin "$DATA_BRANCH" && git rebase "origin/$DATA_BRANCH" || git rebase --abort
+          done
+
+      - name: Summary
+        env:
+          REF: ${{ github.ref_name }}
+        run: |
+          python3 - >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json, os
+          ref = os.environ["REF"]
+          p = json.load(open(f"history/{ref}.json"))["points"]
+          scored = [x for x in p if x["signal"] is not None]
+          last = scored[-1]
+          print(f"### Tectonix · `{ref}`")
+          print()
+          print(f"{len(p)} commits · latest **{last['short']}** → **{last['signal']:,}** / 10,000 · bottleneck `{last['bottleneck']}`")
+          PY

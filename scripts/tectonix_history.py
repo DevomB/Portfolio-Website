@@ -34,7 +34,10 @@ for stream in (sys.stdout, sys.stderr):
         pass
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "src" / "app" / "(home)" / "tectonixHistory.json"
+# Where the history is written. Locally this is the snapshot bundled with the
+# site (the chart's offline fallback); in CI the workflow points it at the
+# data branch's file so scoring is incremental across runs.
+OUT = Path(os.environ["TECTONIX_HISTORY_OUT"]) if os.environ.get("TECTONIX_HISTORY_OUT") else ROOT / "src" / "app" / "(home)" / "tectonixHistory.json"
 TECTONIX = shutil.which("tectonix") or str(Path.home() / ".cargo" / "bin" / "tectonix.exe")
 
 
@@ -96,7 +99,8 @@ def main() -> int:
             previous[p["sha"]] = p
 
     version = subprocess.run([TECTONIX, "--version"], capture_output=True, text=True).stdout.strip() or "tectonix"
-    branch = git("rev-parse", "--abbrev-ref", "HEAD").strip()
+    # CI checks out a detached ref; let it name the branch explicitly
+    branch = os.environ.get("TECTONIX_HISTORY_BRANCH") or git("rev-parse", "--abbrev-ref", "HEAD").strip()
 
     def save(points: list[dict]) -> None:
         # written after EVERY commit, so a crash or Ctrl-C keeps the progress

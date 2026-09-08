@@ -375,6 +375,15 @@ intent. Ranked by how likely the next click is:
   to a third-party CDN. Screenshots in the side quests go through next/image
   and load lazily.
 
+- **The Tectonix chart is live data with an offline floor.** On every push,
+  .github/workflows/tectonix-history.yml scores the new commits with the real
+  binary and publishes history/<branch>.json to the tectonix-history data
+  branch (never a commit on a code branch, so no doubled deploys). The home
+  page fetches that file server-side for the branch it was deployed from and
+  revalidates every five minutes; if it is missing or unreachable the bundled
+  src/app/(home)/tectonixHistory.json renders instead. Visitors never contact
+  GitHub. Refresh the bundled snapshot occasionally with pnpm tectonix:history.
+
 The measuring scripts (netlog, metrics, cpu-profile) live outside the repo;
 the numbers that justified each rule are in the commit messages.
 
