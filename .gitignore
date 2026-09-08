@@ -40,6 +40,9 @@ __pycache__/
 .tectonix/*
 !.tectonix/rules.toml
 
-# rust wasm wrappers build here; the built .wasm is committed under public/wasm
+# engine builds: wasm/ wrappers build here; the outputs are fetched into public/wasm
+# from the `artifacts` branch by scripts/fetch_artifacts.mjs (pinned in artifacts.lock.json)
 wasm/**/target/
 wasm/**/Cargo.lock
+public/wasm/ananke-counterexample.js
+public/wasm/pallas-arena.wasm

@@ -1,9 +1,10 @@
 """Build the Counterexample bridge: Ananke (OCaml, pinned from GitHub) plus the
 payments domain, compiled to JavaScript by js_of_ocaml and copied to
-public/wasm/ananke-counterexample.js, which is committed — Vercel has no
-OCaml toolchain.
+public/wasm/ananke-counterexample.js. Vercel has no OCaml toolchain, so the
+build is published to the `artifacts` branch and fetched at build time:
 
     pnpm js:ananke
+    pnpm artifacts:push   # then commit artifacts.lock.json
 
 Runs inside WSL, where the opam switch `ananke` holds OCaml 5.2, dune,
 js_of_ocaml and the pinned `ananke` package:

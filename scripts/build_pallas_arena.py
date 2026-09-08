@@ -1,8 +1,10 @@
 """Build the Adversarial Tape engine: the published athenas-pallas crate behind a
 thin WASI wrapper (wasm/pallas-arena), compiled to wasm32-wasip1 and copied to
-public/wasm/pallas-arena.wasm, which is committed — Vercel has no Rust toolchain.
+public/wasm/pallas-arena.wasm. Vercel has no Rust toolchain, so the build is
+published to the `artifacts` branch and fetched at build time:
 
     pnpm wasm:pallas
+    pnpm artifacts:push   # then commit artifacts.lock.json
 
 Requires: rustup target add wasm32-wasip1
 """

@@ -1,0 +1,14 @@
+{
+  "repo": "DevomB/Portfoilo-Website",
+  "branch": "artifacts",
+  "artifacts": {
+    "public/wasm/ananke-counterexample.js": {
+      "commit": "1aa7813ea3800b1c984d211ac1f39f62316d6e92",
+      "sha256": "bb1688d068356a79c80cb479aabc6e56013829029d6055ff1e09f384ec1e49ab"
+    },
+    "public/wasm/pallas-arena.wasm": {
+      "commit": "1aa7813ea3800b1c984d211ac1f39f62316d6e92",
+      "sha256": "a602fcb017afb6cd942eac30f3d25b5eb2cb8d4805e046d2a9fea2523cdae83b"
+    }
+  }
+}

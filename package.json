@@ -3,17 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/fetch_artifacts.mjs && next dev",
     "setup:desk": "python -m venv .venv && .venv/Scripts/python -m pip install -r requirements.txt",
     "dev:desk": ".venv/Scripts/python scripts/carddesk_dev.py",
-    "build": "next build",
+    "build": "node scripts/fetch_artifacts.mjs && next build",
     "start": "next start",
     "lint": "cross-env ESLINT_USE_FLAT_CONFIG=true eslint .",
     "test": "vitest run",
     "tectonix:history": "python scripts/tectonix_history.py",
     "tectonix:pull": "python scripts/tectonix_pull.py",
     "wasm:pallas": "python scripts/build_pallas_arena.py",
-    "js:ananke": "python scripts/build_ananke_counterexample.py"
+    "js:ananke": "python scripts/build_ananke_counterexample.py",
+    "artifacts:pull": "node scripts/fetch_artifacts.mjs",
+    "artifacts:push": "python scripts/push_artifacts.py"
   },
   "dependencies": {
     "@bjorn3/browser_wasi_shim": "^0.4.2",

@@ -2,7 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
     "deploymentEnabled": {
-      "tectonix-history": false
+      "tectonix-history": false,
+      "artifacts": false
     }
-  }
+  },
+  "buildCommand": "pnpm run build"
 }
