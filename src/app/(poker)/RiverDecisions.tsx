@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Terrain, { clamp, type TriFill } from "@/app/(poker)/Terrain";
+import Terrain, { type TriFill } from "@/app/(poker)/Terrain";
+import { clamp } from "@/lib/num";
 import BoardPicker, { SUIT_GLYPH, SUIT_RED } from "@/app/(poker)/BoardPicker";
 import RangePainter, { paintPreset } from "@/app/(poker)/RangePainter";
 import { cellOf, classLabel } from "@/app/(poker)/handMatrix";

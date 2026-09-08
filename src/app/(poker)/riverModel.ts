@@ -25,6 +25,8 @@
      raise, villain calls, win / tie / lose +(P+R) / +P/2 / −R
        (pot after the call is P+2R; hero's stake is R) */
 
+import { clamp01 } from "@/lib/num";
+
 export type Policy = { valueFrac: number; bluffFreq: number; foldToRaise: number };
 export type Sizes = { pot: number; bet: number; raiseTo: number };
 
@@ -43,8 +45,6 @@ export type ActionEvs = {
   pTieIfCalled: number;
   bettingWeight: number;   // total weight villain bets with (of the arriving range)
 };
-
-const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 /** Villain's betting range under a policy: (weight, foldsToRaise) per combo.
     `sortedAsc` must be ascending by strength; returned in the same order. */

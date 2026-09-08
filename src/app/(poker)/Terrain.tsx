@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MATRIX_RANKS, cellIndex, cellOf } from "@/app/(poker)/handMatrix";
+import { clamp } from "@/lib/num";
 
 /* One terrain, two surfaces. The 13×13 starting-hand matrix drawn as an
    isometric mesh: a vertex per class, height in [0, 1], triangles painted by
@@ -18,7 +19,6 @@ const CY = TERRAIN_H / 2 + 40;
 const SCALE = 26;   // world unit → px
 const HEIGHT = 190; // px at height 1.0
 
-export const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /** Colour of one triangle from its three vertex cells, mean height and a slope shade in [0.25, 1]. */
 export type TriFill = (p: number, q: number, r: number, mean: number, shade: number) => string;

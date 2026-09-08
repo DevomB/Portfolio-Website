@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { mulberry32 } from "@/app/(poker)/poker";
-import { logReturns } from "@/app/(pallas)/tape";
+import { logReturns, shuffledCloses } from "@/app/(pallas)/tape";
 import {
   FOLDS, INITIAL_BALANCE, IS_BARS, PHI_MAX, WORLD_BARS, argmax, gridCells, gridShape, makeWorld, neighbours, phiOf,
-  plateauPick, rebase, segmentPnl, segmentSharpe, shuffledCloses,
+  plateauPick, rebase, segmentPnl, segmentSharpe,
 } from "@/app/(pallas)/worlds";
 
 describe("worlds", () => {

@@ -10,8 +10,9 @@
    in-sample, walk-forward and held-out numbers are computed the same way. */
 
 import { mulberry32 } from "@/app/(poker)/poker";
+import { clamp } from "@/lib/num";
+import { normal } from "./gaussian";
 import type { ArenaParams } from "./pallasArena";
-import { fromReturns, logReturns } from "./tape";
 
 export const IS_BARS = 500;
 export const OOS_BARS = 250;
@@ -30,15 +31,6 @@ export const WORLDS: { key: WorldKind; label: string; blurb: string }[] = [
   { key: "reversion", label: "planted reversal", blurb: "returns reverse: today leans against yesterday" },
 ];
 
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-
-function normal(rng: () => number): number {
-  let u = 0, v = 0;
-  while (u === 0) u = rng();
-  while (v === 0) v = rng();
-  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-}
-
 export const phiOf = (kind: WorldKind, strength: number) =>
   kind === "noise" ? 0 : (kind === "trend" ? 1 : -1) * PHI_MAX * clamp(strength, 0, 1);
 
@@ -54,16 +46,6 @@ export function makeWorld(seed: number, kind: WorldKind, strength: number, n = W
     prev = r;
   }
   return closes;
-}
-
-/** The same returns in a random order: same distribution, no structure. */
-export function shuffledCloses(closes: number[], rng: () => number): number[] {
-  const r = logReturns(closes);
-  for (let i = r.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    const t = r[i]!; r[i] = r[j]!; r[j] = t;
-  }
-  return fromReturns(closes[0]!, r);
 }
 
 // ── parameter grids ───────────────────────────────────────────────────────
@@ -167,3 +149,52 @@ export function rebase(equity: number[], from: number, to: number): number[] {
   const b = before(equity, from);
   return equity.slice(from, Math.min(to, equity.length)).map((e) => e - b + INITIAL_BALANCE);
 }
+
+// ── what the Mirage worker says ───────────────────────────────────────────
+// The experiment's inputs and outputs, in the module that defines the
+// experiment; the page and the worker both import them from here.
+
+export type MirageStart = {
+  type: "start";
+  seed: number;
+  kind: WorldKind;
+  strength: number;
+  family: Family;
+  metric: Metric;
+  permutations: number;
+  qty: number;
+};
+export type CellScore = { pnl: number; sharpe: number; trades: number };
+export type WalkFold = { fold: number; from: number; to: number; pick: number; pnl: number; sharpe: number };
+export type Segment = { pnl: number; sharpe: number; equity: number[] };
+export type Phase = "sweep" | "walk" | "noise" | "holdout";
+export type MirageProgress = {
+  type: "progress";
+  phase: Phase;
+  done: number;
+  total: number;
+  grid: (CellScore | null)[];
+  walk: WalkFold[];
+  noiseMax: number[];
+  evals: number;
+  evalsPerSec: number;
+};
+export type MirageDone = {
+  type: "done";
+  grid: CellScore[];
+  peak: number;
+  plateau: number;
+  walk: WalkFold[];
+  /** `hold` is the reference: long from the first held-out bar, no decisions. */
+  holdout: { peak: Segment; plateau: Segment; walk: Segment; hold: Segment };
+  noiseMax: number[];
+  pValue: number;
+  evals: number;
+  ms: number;
+};
+export type MirageMessage =
+  | { type: "ready" }
+  | { type: "world"; closes: number[] }
+  | MirageProgress
+  | MirageDone
+  | { type: "error"; message: string };

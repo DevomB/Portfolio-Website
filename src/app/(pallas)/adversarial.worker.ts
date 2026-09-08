@@ -8,37 +8,12 @@
 
    Every candidate is scored by the real engine (Athena's Pallas in WASI). */
 
-import { PallasArena, type ArenaParams, type ArenaStrategy } from "./pallasArena";
-import { annualisedVol, fromReturns, logReturns, toCsv } from "./tape";
+import { PallasArena } from "./pallasArena";
+import {
+  annualisedVol, fromReturns, logReturns, toCsv,
+  type SearchDone, type SearchMessage, type SearchProgress, type SearchStart,
+} from "./tape";
 import { mulberry32 } from "@/app/(poker)/poker";
-
-export type SearchStart = {
-  type: "start";
-  closes: number[];
-  strategy: ArenaStrategy;
-  params: ArenaParams;
-  seed: number;
-  maxIters: number;
-  volCap: number; // multiple of the original tape's annualised vol
-};
-export type SearchProgress = {
-  type: "progress";
-  iter: number;
-  evals: number;
-  accepted: number;
-  improved: boolean;
-  bestPnl: number;
-  basePnl: number;
-  currentPnl: number;
-  temperature: number;
-  bestCloses: number[];
-  bestEquity: number[];
-  evalsPerSec: number;
-};
-export type SearchDone = { type: "done"; iter: number; bestPnl: number; bestCloses: number[]; bestEquity: number[]; evals: number };
-export type SearchError = { type: "error"; message: string };
-export type SearchBaseline = { type: "baseline"; pnl: number; equity: number[] };
-export type SearchMessage = SearchProgress | SearchDone | SearchError | SearchBaseline | { type: "ready" };
 
 let arena: PallasArena | null = null;
 let stop = false;

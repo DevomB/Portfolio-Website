@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { PokerCalculations } from "poker-calculations";
+import { bad, engineUnavailable, loadNative } from "@/app/(poker)/api/poker/engine";
 import { canonicalizeHand } from "@/app/(poker)/poker";
 import { cellOf, classCombos, classLabel } from "@/app/(poker)/handMatrix";
 import { actionEvs, nearestFlips, robustChoice, type Policy, type Sizes, type VillainCombo } from "@/app/(poker)/riverModel";
@@ -26,19 +27,6 @@ export const runtime = "nodejs";
 const RANKS = "23456789TJQKA";
 const SUITS = "cdhs";
 const CATEGORY = ["highCard", "onePair", "twoPair", "threeOfAKind", "straight", "flush", "fullHouse", "fourOfAKind", "straightFlush", "royalFlush"];
-
-let native: PokerCalculations | "unavailable" | undefined;
-async function loadNative(): Promise<PokerCalculations | null> {
-  if (native === "unavailable") return null;
-  if (native !== undefined) return native;
-  try {
-    native = (await import("poker-calculations")).default as PokerCalculations;
-    return native;
-  } catch {
-    native = "unavailable";
-    return null;
-  }
-}
 
 /** Total order over 7-card hands from the engine's {rank, kickers}: category first, then kickers high to low. */
 function score(r: { rank: string; kickers: number[] }): number {
@@ -81,7 +69,6 @@ function universeFor(board: string[], engine: PokerCalculations): Universe {
   return u;
 }
 
-const bad = (error: string) => NextResponse.json({ error }, { status: 400 });
 const num = (v: unknown, lo: number, hi: number, d: number) =>
   typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d;
 
@@ -108,7 +95,7 @@ export async function POST(req: Request) {
   const wantSurface = body.surface !== false;
 
   const engine = await loadNative();
-  if (!engine) return NextResponse.json({ error: "The native engine is unavailable on this host." }, { status: 503 });
+  if (!engine) return engineUnavailable();
 
   const t0 = performance.now();
   const U = universeFor(board, engine);

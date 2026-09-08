@@ -9,58 +9,13 @@
    Progress is posted as cells fill in, so the grid paints live. */
 
 import { PallasArena, type ArenaParams, type ArenaStrategy } from "./pallasArena";
-import { toCsv } from "./tape";
+import { shuffledCloses, toCsv } from "./tape";
 import { mulberry32 } from "@/app/(poker)/poker";
 import {
   FOLDS, INITIAL_BALANCE, IS_BARS, WARMUP, WORLD_BARS,
-  argmax, gridCells, makeWorld, plateauPick, rebase, segmentPnl, segmentSharpe, shuffledCloses,
-  type Family, type Metric, type WorldKind,
+  argmax, gridCells, makeWorld, plateauPick, rebase, segmentPnl, segmentSharpe,
+  type CellScore, type MirageMessage, type MirageStart, type Phase, type Segment, type WalkFold,
 } from "./worlds";
-
-export type MirageStart = {
-  type: "start";
-  seed: number;
-  kind: WorldKind;
-  strength: number;
-  family: Family;
-  metric: Metric;
-  permutations: number;
-  qty: number;
-};
-export type CellScore = { pnl: number; sharpe: number; trades: number };
-export type WalkFold = { fold: number; from: number; to: number; pick: number; pnl: number; sharpe: number };
-export type Segment = { pnl: number; sharpe: number; equity: number[] };
-export type Phase = "sweep" | "walk" | "noise" | "holdout";
-export type MirageProgress = {
-  type: "progress";
-  phase: Phase;
-  done: number;
-  total: number;
-  grid: (CellScore | null)[];
-  walk: WalkFold[];
-  noiseMax: number[];
-  evals: number;
-  evalsPerSec: number;
-};
-export type MirageDone = {
-  type: "done";
-  grid: CellScore[];
-  peak: number;
-  plateau: number;
-  walk: WalkFold[];
-  /** `hold` is the reference: long from the first held-out bar, no decisions. */
-  holdout: { peak: Segment; plateau: Segment; walk: Segment; hold: Segment };
-  noiseMax: number[];
-  pValue: number;
-  evals: number;
-  ms: number;
-};
-export type MirageMessage =
-  | { type: "ready" }
-  | { type: "world"; closes: number[] }
-  | MirageProgress
-  | MirageDone
-  | { type: "error"; message: string };
 
 let arena: PallasArena | null = null;
 let stop = false;

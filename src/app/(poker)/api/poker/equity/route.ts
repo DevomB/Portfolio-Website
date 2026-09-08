@@ -1,28 +1,10 @@
 import { NextResponse } from "next/server";
-import type { PokerCalculations } from "poker-calculations";
-import { canonicalizeHand, parseCodes } from "@/app/(poker)/poker";
-import { simulateEquityMonteCarloJs } from "@/app/(poker)/poker";
+import { canonicalizeHand, parseCodes, simulateEquityMonteCarloJs } from "@/app/(poker)/poker";
+import { bad, dropNative, loadNative } from "@/app/(poker)/api/poker/engine";
 
 export const runtime = "nodejs";
 
-let nativePoker: PokerCalculations | "unavailable" | undefined;
-
-async function loadNativePoker(): Promise<PokerCalculations | null> {
-  if (nativePoker === "unavailable") return null;
-  if (nativePoker !== undefined) return nativePoker;
-  try {
-    const mod = await import("poker-calculations");
-    nativePoker = mod.default as PokerCalculations;
-    return nativePoker;
-  } catch {
-    nativePoker = "unavailable";
-    return null;
-  }
-}
-
 type EquityParams = { hero: string[]; board: string[]; iterations: number; seed: number };
-
-const bad = (error: string) => NextResponse.json({ error }, { status: 400 });
 
 /** Read and validate the request body. Returns the params, or the response to send instead. */
 function readParams(body: unknown): EquityParams | NextResponse {
@@ -61,10 +43,10 @@ function clampIterations(v: unknown): number {
 /** Native engine first; the JS mirror if it is missing or throws. */
 async function runEquity({ hero, board, iterations, seed }: EquityParams): Promise<number> {
   try {
-    const native = await loadNativePoker();
+    const native = await loadNative();
     if (native) return native.simulateHandOutcome(hero, board, iterations, seed, 1);
   } catch {
-    nativePoker = "unavailable";
+    dropNative();
   }
   return simulateEquityMonteCarloJs(hero, board, iterations, seed);
 }

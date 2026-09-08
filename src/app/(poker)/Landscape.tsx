@@ -5,6 +5,7 @@ import Terrain, { type TriFill } from "@/app/(poker)/Terrain";
 import BoardPicker from "@/app/(poker)/BoardPicker";
 import RangePainter, { paintPreset } from "@/app/(poker)/RangePainter";
 import { cellOf, classLabel } from "@/app/(poker)/handMatrix";
+import { clamp } from "@/lib/num";
 
 /* The Landscape.
    169 starting hands as an isometric terrain: height is equity on the
@@ -29,7 +30,6 @@ type Quote = {
   cached: boolean;
 };
 
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /** sequential single-hue ramp (purple, dark→light) for 0..1 — text never wears it */
 function ramp(t: number, shade: number): string {

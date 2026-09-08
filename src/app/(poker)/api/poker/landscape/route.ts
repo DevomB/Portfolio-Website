@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import os from "node:os";
 import type { PokerCalculations } from "poker-calculations";
+import { bad, engineUnavailable, loadNative } from "@/app/(poker)/api/poker/engine";
 import { canonicalizeHand, mulberry32, simulateEquityMonteCarloJs } from "@/app/(poker)/poker";
 import { cellOf, classCombos, classLabel, liveCombos } from "@/app/(poker)/handMatrix";
 
@@ -32,20 +33,6 @@ const RANKS = "23456789TJQKA";
 const SUITS = "cdhs";
 /** engine deck id: rank * 4 + suit (2..A, c d h s) */
 const cardId = (c: string) => RANKS.indexOf(c[0]!) * 4 + SUITS.indexOf(c[1]!);
-
-let nativePoker: PokerCalculations | "unavailable" | undefined;
-async function loadNative(): Promise<PokerCalculations | null> {
-  if (nativePoker === "unavailable") return null;
-  if (nativePoker !== undefined) return nativePoker;
-  try {
-    const mod = await import("poker-calculations");
-    nativePoker = mod.default as PokerCalculations;
-    return nativePoker;
-  } catch {
-    nativePoker = "unavailable";
-    return null;
-  }
-}
 
 // FNV-1a — a stable 32-bit seed from the request shape
 function seedFor(parts: string): number {
@@ -142,8 +129,6 @@ function mcVsRange(
   return eq / sims;
 }
 
-const bad = (error: string) => NextResponse.json({ error }, { status: 400 });
-
 export async function POST(req: Request) {
   let body: unknown;
   try { body = await req.json(); } catch { return bad("Invalid JSON body."); }
@@ -173,7 +158,7 @@ export async function POST(req: Request) {
   }
 
   const native = await loadNative();
-  if (!native && villains === "range") return NextResponse.json({ error: "The native engine is unavailable on this host." }, { status: 503 });
+  if (!native && villains === "range") return engineUnavailable();
   const t0 = performance.now();
   const equities: (number | null)[] = new Array(169).fill(null);
 

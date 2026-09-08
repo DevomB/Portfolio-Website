@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import LineChart from "./LineChart";
-import { makeTape, TAPE_LEN } from "./tape";
+import { money } from "./format";
+import { makeTape, TAPE_LEN, type SearchMessage, type SearchStart } from "./tape";
 import type { ArenaParams, ArenaStrategy } from "./pallasArena";
-import type { SearchMessage, SearchStart } from "./adversarial.worker";
+import { useEngineWorker } from "./useEngineWorker";
 
 /* Adversarial Tape.
    The engine (Athena's Pallas, WASI build) runs in a Web Worker. This page
@@ -33,7 +34,6 @@ type World = {
 };
 
 const LB_KEY = "pallas-arena-worlds";
-const money = (v: number) => (v < 0 ? "−" : v > 0 ? "+" : "") + "$" + Math.abs(v).toLocaleString("en-US", { maximumFractionDigits: 0 });
 
 export default function AdversarialTape() {
   const [strategy, setStrategy] = useState<ArenaStrategy>("sma_cross");
@@ -49,7 +49,7 @@ export default function AdversarialTape() {
   const [hover, setHover] = useState<number | null>(null);
   const [worlds, setWorlds] = useState<World[]>([]);
   const [viewing, setViewing] = useState<World | null>(null);
-  const workerRef = useRef<Worker | null>(null);
+  const worker = useEngineWorker<SearchMessage>(() => new Worker(new URL("./adversarial.worker.ts", import.meta.url), { type: "module" }));
 
   const closes = useMemo(() => makeTape(seed, TAPE_LEN), [seed]);
 
@@ -71,17 +71,11 @@ export default function AdversarialTape() {
     });
   }, []);
 
-  useEffect(() => () => workerRef.current?.terminate(), []);
-
   const attack = () => {
     setError(null); setProgress(null); setBaseline(null); setViewing(null);
     setPhase("loading");
-    if (!workerRef.current) {
-      workerRef.current = new Worker(new URL("./adversarial.worker.ts", import.meta.url), { type: "module" });
-    }
-    const w = workerRef.current;
-    w.onmessage = (ev: MessageEvent<SearchMessage>) => {
-      const m = ev.data;
+    const start: SearchStart = { type: "start", closes, strategy, params, seed: seed * 7919 + 1, maxIters: iters, volCap };
+    worker.start(start, (m) => {
       if (m.type === "ready") return;
       if (m.type === "baseline") { setBaseline({ pnl: m.pnl, equity: m.equity }); setPhase("running"); return; }
       if (m.type === "progress") { setProgress(m); return; }
@@ -96,11 +90,8 @@ export default function AdversarialTape() {
           return b;
         });
       }
-    };
-    const start: SearchStart = { type: "start", closes, strategy, params, seed: seed * 7919 + 1, maxIters: iters, volCap };
-    w.postMessage(start);
+    });
   };
-  const stop = () => workerRef.current?.postMessage({ type: "stop" });
 
   const shownBase = viewing ? { pnl: viewing.basePnl, equity: null } : baseline;
   const shownWorst = viewing ? { pnl: viewing.worstPnl, closes: viewing.closes, equity: viewing.equity } : progress ? { pnl: progress.bestPnl, closes: progress.bestCloses, equity: progress.bestEquity } : null;
@@ -185,7 +176,7 @@ export default function AdversarialTape() {
               {phase === "loading" ? "loading engine…" : phase === "running" ? "attacking…" : phase === "done" ? "attack again" : "attack"}
             </button>
             {running && (
-              <button type="button" onClick={stop} className="rounded-lg border border-border px-3 py-2 font-display text-fluid-sm text-muted hover:text-ink transition-colors">stop</button>
+              <button type="button" onClick={worker.stop} className="rounded-lg border border-border px-3 py-2 font-display text-fluid-sm text-muted hover:text-ink transition-colors">stop</button>
             )}
           </div>
           {error && <p className="mt-3 font-mono text-[0.62rem] text-danger break-words">{error}</p>}

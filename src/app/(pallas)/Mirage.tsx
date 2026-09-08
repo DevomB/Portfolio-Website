@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import LineChart from "./LineChart";
-import { FAMILIES, INITIAL_BALANCE, IS_BARS, OOS_BARS, PHI_MAX, WORLDS, gridCells, gridShape, phiOf, type Family, type Metric, type WorldKind } from "./worlds";
-import type { CellScore, MirageDone, MirageMessage, MirageProgress, MirageStart, WalkFold } from "./mirage.worker";
+import { clamp } from "@/lib/num";
+import { money, sharpeFmt } from "./format";
+import { useEngineWorker } from "./useEngineWorker";
+import {
+  FAMILIES, INITIAL_BALANCE, IS_BARS, OOS_BARS, PHI_MAX, WORLDS, gridCells, gridShape, phiOf,
+  type CellScore, type Family, type Metric, type MirageDone, type MirageMessage, type MirageProgress, type MirageStart, type WalkFold, type WorldKind,
+} from "./worlds";
 
 /* The Mirage.
    The engine (Athena's Pallas, WASI build) runs in a Web Worker. This page
@@ -11,10 +16,7 @@ import type { CellScore, MirageDone, MirageMessage, MirageProgress, MirageStart,
    held-out equity chart and the verdict. Every score on screen was read off
    the engine's own equity curve over a stated bar window. */
 
-const money = (v: number) => (v < 0 ? "−" : v > 0 ? "+" : "") + "$" + Math.abs(v).toLocaleString("en-US", { maximumFractionDigits: 0 });
-const sharpeFmt = (v: number) => (v > 0 ? "+" : "") + v.toFixed(2);
 const fmt = (metric: Metric, v: number) => (metric === "pnl" ? money(v) : sharpeFmt(v));
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 // procedures: colour on the heat map marks, in the table and on the equity chart; purple is the buy-and-hold reference
 const PEAK = "#f2f2f2", PLATEAU = "#1fb14a", WALK = "#febc2e", HOLD = "#a35cff";
@@ -143,28 +145,20 @@ export default function Mirage() {
   const [ran, setRan] = useState<{ family: Family; metric: Metric; kind: WorldKind; strength: number; seed: number } | null>(null);
   const [cellHover, setCellHover] = useState<number | null>(null);
   const [chartHover, setChartHover] = useState<number | null>(null);
-  const workerRef = useRef<Worker | null>(null);
-  useEffect(() => () => workerRef.current?.terminate(), []);
+  const worker = useEngineWorker<MirageMessage>(() => new Worker(new URL("./mirage.worker.ts", import.meta.url), { type: "module" }));
 
   const run = () => {
     setError(null); setProgress(null); setResult(null); setCellHover(null);
     setRan({ family, metric, kind, strength, seed });
     setPhase("loading");
-    if (!workerRef.current) {
-      workerRef.current = new Worker(new URL("./mirage.worker.ts", import.meta.url), { type: "module" });
-    }
-    const w = workerRef.current;
-    w.onmessage = (ev: MessageEvent<MirageMessage>) => {
-      const m = ev.data;
+    const start: MirageStart = { type: "start", seed, kind, strength, family, metric, permutations, qty: 50 };
+    worker.start(start, (m) => {
       if (m.type === "ready" || m.type === "world") { setPhase("running"); return; }
       if (m.type === "progress") { setPhase("running"); setProgress(m); return; }
       if (m.type === "error") { setError(m.message === "stopped" ? null : m.message); setPhase("idle"); return; }
       if (m.type === "done") { setResult(m); setPhase("done"); }
-    };
-    const start: MirageStart = { type: "start", seed, kind, strength, family, metric, permutations, qty: 50 };
-    w.postMessage(start);
+    });
   };
-  const stop = () => workerRef.current?.postMessage({ type: "stop" });
   const running = phase === "loading" || phase === "running";
 
   // what the panels show: the finished result, else the live progress
@@ -325,7 +319,7 @@ export default function Mirage() {
               {phase === "loading" ? "loading engine…" : phase === "running" ? "sweeping…" : phase === "done" ? "run again" : "run the experiment"}
             </button>
             {running && (
-              <button type="button" onClick={stop} className="rounded-lg border border-border px-3 py-2 font-display text-fluid-sm text-muted hover:text-ink transition-colors">stop</button>
+              <button type="button" onClick={worker.stop} className="rounded-lg border border-border px-3 py-2 font-display text-fluid-sm text-muted hover:text-ink transition-colors">stop</button>
             )}
           </div>
           <p className="mt-4 font-mono text-[0.6rem] leading-relaxed text-muted/70">
