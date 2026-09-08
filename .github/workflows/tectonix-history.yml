@@ -35,12 +35,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Check out with full history (first-parent walk + worktrees need it)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -51,7 +51,7 @@ jobs:
 
       - name: Cache the built binary
         id: bin
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cargo/bin/tectonix
           key: tectonix-bin-${{ runner.os }}-${{ steps.tx.outputs.sha }}
@@ -65,7 +65,7 @@ jobs:
         run: cargo install --git "$TECTONIX_REPO" --locked --force
 
       - name: Cache the grammar plugins tectonix downloads on first use
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.tectonix
           key: tectonix-plugins-${{ runner.os }}-${{ steps.tx.outputs.sha }}
