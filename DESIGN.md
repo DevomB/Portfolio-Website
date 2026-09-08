@@ -281,13 +281,25 @@ loops.
 **Layout: colocated by feature.** `src/app` is organised in route groups, so a
 directory is a dependency cluster, not a file kind: `(home)` holds the page,
 its sections, the splash, its data and hooks, and the project detail pages;
-`(poker)` holds the poker lab, the landscape, both API routes, and the engine
-(`poker.ts`); `(legal)` holds both policies and their shell; `(chrome)` holds
-what every route shares (Navbar, Footer, IntentLink, MotionProvider); the 404,
-the brand mark, and the metadata images sit at the app root. Route groups add
-no URL segment, so nothing public moved. Tectonix scores modularity on the
-first three path segments, and this layout is why its cross-module edge count
-fell from 39 of 49 to 15 of 55.
+`(poker)` holds the poker lab, the landscape, the decisions surface, the three
+API routes, and the engine (`poker.ts`); `(pallas)` holds the Mirage and the
+Adversarial Tape with their worker, worlds and tapes; `(ananke)` holds the
+Counterexample; `(legal)` holds both policies and their shell; `(chrome)`
+holds what every route shares (Navbar, Footer, IntentLink, MotionProvider,
+and DemoPage — the shell every demo page is built on); `src/lib` holds
+dependency-free helpers; the 404, the brand mark, and the metadata images sit
+at the app root. Route groups add no URL segment, so nothing public moved.
+Tectonix scores modularity on the first three path segments, and this layout
+is why its cross-module edge count fell from 39 of 49 to 22 of 114.
+
+**Rules.** `.tectonix/rules.toml` states the architecture Tectonix checks on
+every push: no cycles, no function over 100 lines or cyclomatic 25, and the
+layers home → demos → engine → chrome → lib, each importing only what sits
+beneath it. A worker's message types live with the domain they describe
+(`worlds.ts`, `tape.ts`), never in the worker, so no page imports a worker
+and the longest import chain stays at three. Helpers have one home each:
+`src/lib/num.ts`, `(pallas)/gaussian.ts`, `(pallas)/format.ts`,
+`api/poker/engine.ts`.
 
 
 **Navbar.** Fixed, 3.5rem tall. Transparent at the top; on scroll `bg` at
@@ -382,7 +394,16 @@ intent. Ranked by how likely the next click is:
   page fetches that file server-side for the branch it was deployed from and
   revalidates every five minutes; if it is missing or unreachable the bundled
   src/app/(home)/tectonixHistory.json renders instead. Visitors never contact
-  GitHub. Refresh the bundled snapshot occasionally with pnpm tectonix:history.
+  GitHub. The bundled snapshot is CI's own file, refreshed with pnpm
+  tectonix:pull; the workflow builds tectonix's tree-sitter grammars from
+  pinned commits, because the release it would download them from does not
+  exist, and refuses to score until they load.
+- **Engine builds are fetched, not committed.** The Pallas arena (.wasm) and
+  the Ananke bridge (js_of_ocaml output) live on the orphan artifacts branch,
+  pinned by commit and sha256 in artifacts.lock.json; scripts/fetch_artifacts.mjs
+  runs before every build and dev server and downloads exactly those bytes when
+  the local copy is missing or differs. Build products stay out of the source
+  tree, so every analysis of the code is about the code.
 
 The measuring scripts (netlog, metrics, cpu-profile) live outside the repo;
 the numbers that justified each rule are in the commit messages.

@@ -1,0 +1,57 @@
+# Architectural rules for devomb.com, checked by `pnpm tectonix:rules` and by
+# .github/workflows/tectonix-history.yml on every push. The thresholds are the
+# ones Tectonix ships for itself; the layers are the route groups. Tectonix
+# reads order 0 as the outermost layer: a layer may import only layers with a
+# HIGHER order. So the home page may depend on a feature, a feature on the
+# engine it demos, and anything on the chrome and on src/lib — never the other
+# way round.
+
+[constraints]
+max_cycles = 0            # no circular imports, ever
+max_cc = 25               # cyclomatic complexity per function
+max_fn_lines = 100        # function length
+no_god_files = true       # no file with a fan-out that makes it the hub of everything
+max_upward_violations = 0 # the layers below are one-directional
+min_quality = 0.70        # a tripwire under today's reading; a push that drops below goes red
+
+# ── layers: order 0 is the top; imports may only point to a higher order ──
+[[layers]]
+name = "home"
+paths = ["src/app/(home)/*"]
+order = 0
+
+[[layers]]
+name = "demos"
+paths = ["src/app/(pallas)/*", "src/app/(ananke)/*", "src/app/card-desk/*", "src/app/(legal)/*"]
+order = 1
+
+[[layers]]
+name = "engine"
+paths = ["src/app/(poker)/*"]
+order = 2
+
+[[layers]]
+name = "chrome"
+paths = ["src/app/(chrome)/*"]
+order = 3
+
+[[layers]]
+name = "lib"
+paths = ["src/lib/*"]
+order = 4
+
+# ── boundaries: the shortcuts that must never appear ─────────────────────
+[[boundaries]]
+from = "src/lib/*"
+to = "src/app/*"
+reason = "src/lib is dependency-free: anything may import it without adding a layer beneath itself"
+
+[[boundaries]]
+from = "src/app/(chrome)/*"
+to = "src/app/(home)/*"
+reason = "the chrome is shared by every page and must not know the home page"
+
+[[boundaries]]
+from = "src/app/(poker)/*"
+to = "src/app/(pallas)/*"
+reason = "the poker engine and its demos do not depend on the trading demos"
