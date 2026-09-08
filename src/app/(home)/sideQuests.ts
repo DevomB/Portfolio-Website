@@ -1,9 +1,7 @@
 /**
  * Side quests: things built for joy, not for the portfolio. They get a
  * screenshot, one line, and a link out — never a project page or a demo.
- *
- * "Also built" is the quieter tier beneath it: names and links only, so the
- * work is findable without being given a spot it hasn't earned.
+ * Two of them, side by side, half the shell each.
  */
 
 export type SideQuest = {
@@ -32,13 +30,4 @@ export const sideQuests: SideQuest[] = [
     repo: "https://github.com/DevomB/Spiderman",
     image: "/images/side-quests/spiderman.jpg",
   },
-];
-
-export type AlsoBuilt = { name: string; url: string };
-
-export const alsoBuilt: AlsoBuilt[] = [
-  /* NOTE — demo candidate. Gaussian Solver takes a matrix and reduces it to
-     reduced row echelon form; that is a natural in-site interactive (type a
-     matrix, watch the row operations). Until it is built it stays a link. */
-  { name: "Gaussian Solver", url: "https://github.com/DevomB/Gaussian-Solver" },
 ];
