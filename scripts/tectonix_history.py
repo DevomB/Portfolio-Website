@@ -4,20 +4,34 @@ commit of this repository and record the quality signal per commit.
     pnpm tectonix:history            # incremental — only commits not yet recorded
     pnpm tectonix:history -- --all   # rebuild from scratch
 
-Writes src/app/(home)/tectonixHistory.json, which the home page charts. Each commit is
-checked out into a temporary git worktree (tectonix scans via `git ls-files`, so
-a plain export would not do), scanned, and health-checked; nothing is written
-into this repository by tectonix itself.
+Each commit is checked out into a temporary git worktree (tectonix scans via
+`git ls-files`, so the worktree is scored exactly as committed) and measured by
+tectonix itself.
+
+Who writes where:
+  * CI (.github/workflows/tectonix-history.yml) is the source of truth. It sets
+    TECTONIX_HISTORY_OUT to the data branch's history/<branch>.json and runs
+    this incrementally on every push; the home page fetches that file.
+  * Locally this writes .tectonix/history-local.json — an experiment file, so a
+    Windows run never overwrites the CI-scored snapshot bundled with the site.
+    `pnpm tectonix:pull` refreshes that snapshot from the data branch.
+
+The `tool` stamp names the toolchain: binary version, platform, and the
+fingerprint of the pinned tree-sitter grammars (scripts/tectonix_grammars.sh).
+When the stamp in an existing file differs from the current toolchain, every
+commit is re-scored: one file is always one consistent reading.
 
 Requires the tectonix binary on PATH (cargo install --git
-https://github.com/DevomB/Tectonix). Grammar libraries are downloaded to
-~/.tectonix on first use; later runs skip the download.
+https://github.com/DevomB/Tectonix) with grammars installed. A scan that loads
+no language plugins is refused, not recorded — that is how the first CI runs
+produced a flattering score for an empty graph.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -34,10 +48,10 @@ for stream in (sys.stdout, sys.stderr):
         pass
 
 ROOT = Path(__file__).resolve().parent.parent
-# Where the history is written. Locally this is the snapshot bundled with the
-# site (the chart's offline fallback); in CI the workflow points it at the
-# data branch's file so scoring is incremental across runs.
-OUT = Path(os.environ["TECTONIX_HISTORY_OUT"]) if os.environ.get("TECTONIX_HISTORY_OUT") else ROOT / "src" / "app" / "(home)" / "tectonixHistory.json"
+# Where the history is written. CI points this at the data branch's file so
+# scoring is incremental across runs; locally it is an experiment file, never
+# the snapshot bundled with the site (that one is CI's, via `pnpm tectonix:pull`).
+OUT = Path(os.environ["TECTONIX_HISTORY_OUT"]) if os.environ.get("TECTONIX_HISTORY_OUT") else ROOT / ".tectonix" / "history-local.json"
 TECTONIX = shutil.which("tectonix") or str(Path.home() / ".cargo" / "bin" / "tectonix.exe")
 
 
@@ -50,7 +64,19 @@ def run_json(*args: str, cwd: Path) -> dict:
     p = subprocess.run([TECTONIX, *args], cwd=cwd, capture_output=True, text=True, encoding="utf-8", env=env)
     if p.returncode != 0:
         raise RuntimeError(f"tectonix {' '.join(args)} failed: {p.stderr.strip()[:300]}")
+    if "No language plugins loaded" in p.stderr:
+        # tectonix without grammars still counts files and lines, finds no
+        # functions and no imports, and scores the empty graph — never record that
+        raise RuntimeError("tectonix loaded no language plugins; install the grammars (scripts/tectonix_grammars.sh)")
     return json.loads(p.stdout)
+
+
+def tool_stamp() -> str:
+    """Binary version + platform + grammar fingerprint: what produced the numbers."""
+    version = subprocess.run([TECTONIX, "--version"], capture_output=True, text=True).stdout.strip() or "tectonix"
+    machine = platform.machine().lower().replace("amd64", "x86_64")
+    grammars = os.environ.get("TECTONIX_GRAMMARS_ID") or "local"
+    return f"{version} ({platform.system().lower()}-{machine}; grammars {grammars})"
 
 
 def commits() -> list[dict]:
@@ -93,12 +119,15 @@ def measure(sha: str) -> dict:
 
 def main() -> int:
     rebuild = "--all" in sys.argv
+    version = tool_stamp()
     previous: dict[str, dict] = {}
     if OUT.exists() and not rebuild:
-        for p in json.loads(OUT.read_text(encoding="utf-8")).get("points", []):
-            previous[p["sha"]] = p
-
-    version = subprocess.run([TECTONIX, "--version"], capture_output=True, text=True).stdout.strip() or "tectonix"
+        existing = json.loads(OUT.read_text(encoding="utf-8"))
+        if existing.get("tool") == version:
+            for p in existing.get("points", []):
+                previous[p["sha"]] = p
+        else:
+            print(f"toolchain changed ({existing.get('tool')!r} -> {version!r}); re-scoring every commit", flush=True)
     # CI checks out a detached ref; let it name the branch explicitly
     branch = os.environ.get("TECTONIX_HISTORY_BRANCH") or git("rev-parse", "--abbrev-ref", "HEAD").strip()
 

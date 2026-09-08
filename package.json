@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "cross-env ESLINT_USE_FLAT_CONFIG=true eslint .",
     "tectonix:history": "python scripts/tectonix_history.py",
+    "tectonix:pull": "python scripts/tectonix_pull.py",
     "wasm:pallas": "python scripts/build_pallas_arena.py",
     "js:ananke": "python scripts/build_ananke_counterexample.py"
   },

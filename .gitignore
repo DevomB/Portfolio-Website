@@ -36,8 +36,9 @@ next-env.d.ts
 # local Python env for api/ functions (pnpm setup:desk)
 .venv/
 __pycache__/
-# tectonix session baselines (tool state, regenerated every run)
-.tectonix/
+# tectonix's own session baseline and local experiment files; rules.toml is source
+.tectonix/*
+!.tectonix/rules.toml
 
 # rust wasm wrappers build here; the built .wasm is committed under public/wasm
 wasm/**/target/

@@ -7,8 +7,12 @@
 # so the chart follows the repo without a bot ever committing to a code branch
 # — no doubled Vercel deploys, no noise in git log.
 #
-# The bundled src/app/(home)/tectonixHistory.json stays as the offline
-# fallback and seeds the data branch on the first run.
+# tectonix reads code through tree-sitter grammars it expects to download from
+# a GitHub release that does not exist; without them it scores an empty graph.
+# So this workflow builds the grammars from pinned commits
+# (scripts/tectonix_grammars.sh), caches them, and proves they load before a
+# single commit is scored. The bundled src/app/(home)/tectonixHistory.json is
+# the offline fallback, refreshed from the data branch with `pnpm tectonix:pull`.
 
 name: tectonix-history
 
@@ -16,6 +20,11 @@ on:
   push:
     branches: [main, redesign]
   workflow_dispatch:
+    inputs:
+      rebuild:
+        description: "Re-score every commit instead of only the new ones"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -28,6 +37,8 @@ concurrency:
 env:
   TECTONIX_REPO: https://github.com/DevomB/Tectonix
   DATA_BRANCH: tectonix-history
+  # the release asset it would fetch is a 404; we build the grammars ourselves
+  TECTONIX_SKIP_GRAMMAR_DOWNLOAD: "1"
 
 jobs:
   score:
@@ -64,17 +75,40 @@ jobs:
         if: steps.bin.outputs.cache-hit != 'true'
         run: cargo install --git "$TECTONIX_REPO" --locked --force
 
-      - name: Cache the grammar plugins tectonix downloads on first use
-        uses: actions/cache@v5
-        with:
-          path: ~/.tectonix
-          key: tectonix-plugins-${{ runner.os }}-${{ steps.tx.outputs.sha }}
-          restore-keys: tectonix-plugins-${{ runner.os }}-
-
-      - name: Verify
+      - name: Verify the binary and let it sync its plugin configs
         run: |
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           "$HOME/.cargo/bin/tectonix" --version
+          # the first scan writes ~/.tectonix/plugins/<lang>/{plugin.toml,queries};
+          # the grammars are built into those directories next
+          "$HOME/.cargo/bin/tectonix" scan .github >/dev/null 2>&1 || true
+
+      # ── the grammars: pinned commits, built once, cached ──────────────────
+      - name: Grammar fingerprint
+        id: grammars
+        run: echo "id=$(bash scripts/tectonix_grammars.sh --id)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the built grammars
+        id: plugins
+        uses: actions/cache@v5
+        with:
+          path: ~/.tectonix
+          key: tectonix-plugins-${{ runner.os }}-${{ steps.tx.outputs.sha }}-${{ steps.grammars.outputs.id }}
+
+      - name: Build the tree-sitter grammars (only when not cached)
+        if: steps.plugins.outputs.cache-hit != 'true'
+        run: bash scripts/tectonix_grammars.sh
+
+      - name: Prove the grammars load before scoring anything
+        run: |
+          set -o pipefail
+          tectonix scan . 2> scan.err | tee scan.json
+          if grep -q "No language plugins loaded" scan.err; then
+            echo "::error::tectonix loaded no language plugins — the grammars did not build or load"; cat scan.err; exit 1
+          fi
+          edges=$(python3 -c "import json;print(json.load(open('scan.json'))['import_edges'])")
+          echo "import edges on HEAD: $edges"
+          if [ "$edges" -eq 0 ]; then echo "::error::zero import edges on HEAD: the scan is not reading the code"; cat scan.err; exit 1; fi
 
       # ── previous results: incremental means only new commits are scored ──
       - name: Fetch the data branch (may not exist yet)
@@ -93,7 +127,8 @@ jobs:
         env:
           TECTONIX_HISTORY_OUT: ${{ github.workspace }}/history/${{ github.ref_name }}.json
           TECTONIX_HISTORY_BRANCH: ${{ github.ref_name }}
-        run: python scripts/tectonix_history.py
+          TECTONIX_GRAMMARS_ID: ${{ steps.grammars.outputs.id }}
+        run: python scripts/tectonix_history.py ${{ inputs.rebuild && '--all' || '' }}
 
       # ── publish: a single-file commit on the data branch, never on a code branch ──
       - name: Publish to the data branch
@@ -134,10 +169,26 @@ jobs:
           python3 - >> "$GITHUB_STEP_SUMMARY" <<'PY'
           import json, os
           ref = os.environ["REF"]
-          p = json.load(open(f"history/{ref}.json"))["points"]
+          h = json.load(open(f"history/{ref}.json"))
+          p = h["points"]
           scored = [x for x in p if x["signal"] is not None]
           last = scored[-1]
           print(f"### Tectonix · `{ref}`")
           print()
           print(f"{len(p)} commits · latest **{last['short']}** → **{last['signal']:,}** / 10,000 · bottleneck `{last['bottleneck']}`")
+          print()
+          print(f"toolchain: `{h['tool']}`")
+          PY
+
+      # ── the architecture rules, once the repo declares them ───────────────
+      - name: Check the architecture rules
+        if: hashFiles('.tectonix/rules.toml') != ''
+        run: |
+          tectonix check-rules . 2>/dev/null | tee rules.json
+          python3 - <<'PY'
+          import json, sys
+          r = json.load(open("rules.json"))
+          v = r.get("violations") or []
+          for x in v: print(f"::error::{x.get('rule')}: {x.get('message')}")
+          sys.exit(1 if v else 0)
           PY
