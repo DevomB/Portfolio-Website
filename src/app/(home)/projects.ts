@@ -13,6 +13,8 @@ export type Project = {
   npmPackage?: string;
   /** PyPI distribution name, e.g. "cardquant" — renders a pip snippet. */
   pypiPackage?: string;
+  /** crates.io crate name, e.g. "athenas-pallas". */
+  crate?: string;
   /** Route of the live, in-site demo for this project, e.g. "/poker-lab". */
   demoPath?: string;
   /** Further in-site demos for the same project, shown beside the main one. */
@@ -84,6 +86,7 @@ export const projects: Project[] = [
       "An event-driven algorithmic backtesting framework: a replay engine over bars or tick data, paper execution with queue-aware fills, order types with real time-in-force semantics, a risk engine, options analytics, and a report that records everything from fees and turnover to rejections. Strategies plug in through a Rust trait or run as external Python/C++ processes over a JSON protocol. Published as athenas-pallas on crates.io. The Mirage and the Adversarial Tape on this site are the published crate compiled for the browser: the same code, a different CPU.",
     techStack: ["Rust", "Event-driven", "Backtesting", "WASI", "crates.io"],
     githubUrl: "https://github.com/DevomB/Athenas-Pallas",
+    crate: "athenas-pallas",
     demoPath: "/mirage",
     extraDemos: [{ label: "Adversarial Tape", path: "/adversarial" }],
     readmeSections: [

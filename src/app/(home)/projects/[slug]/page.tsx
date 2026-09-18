@@ -1,15 +1,31 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { projects, getProject } from "@/app/(home)/projects";
+import { projects, getProject, type Project } from "@/app/(home)/projects";
 import Navbar from "@/app/(chrome)/Navbar";
 import Footer from "@/app/(chrome)/Footer";
+import { ButtonLink } from "@/app/(chrome)/Button";
 import CopyButton from "@/app/(home)/CopyButton";
-import PokerLabModal from "@/app/(poker)/PokerLabModal";
-import IntentLink from "@/app/(chrome)/IntentLink";
 
 export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }));
+}
+
+/** Where the project is published, in the order its buttons appear. */
+function registryLinks(p: Project): { label: string; href: string }[] {
+  return [
+    p.npmPackage && { label: "npm", href: `https://www.npmjs.com/package/${p.npmPackage}` },
+    p.crate && { label: "crates.io", href: `https://crates.io/crates/${p.crate}` },
+    p.pypiPackage && { label: "PyPI", href: `https://pypi.org/project/${p.pypiPackage}/` },
+  ].filter((r): r is { label: string; href: string } => !!r);
+}
+
+function PlayIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3l14 9-14 9V3z" />
+    </svg>
+  );
 }
 
 export async function generateMetadata({
@@ -75,69 +91,45 @@ export default async function ProjectPage({
             </div>
           </div>
 
-          {/* action row */}
+          {/* action row, the same order on every project: the live demo, the
+              other demos, the source, the registry. Demo routes are whole
+              interactive desks — fetched on intent, not for every reader. */}
           <div className="mb-10 flex flex-wrap gap-3 items-center">
-            {project.githubUrl && (
-              <Link
-                href={project.githubUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 font-display text-fluid-sm font-medium text-ink transition-all hover:border-accent/40 hover:bg-accent-bg hover:text-accent-dim"
-              >
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z" />
-                </svg>
-                View source
-              </Link>
+            {project.demoPath && (
+              <ButtonLink href={project.demoPath} prefetch="intent">
+                <PlayIcon />
+                Open live demo
+              </ButtonLink>
             )}
+            {project.extraDemos?.map((d) => (
+              <ButtonLink key={d.path} href={d.path} prefetch="intent" variant="ghost">
+                <PlayIcon />
+                {d.label}
+              </ButtonLink>
+            ))}
             {project.liveUrl && (
-              <Link
-                href={project.liveUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 font-display text-fluid-sm font-medium text-ink transition-all hover:border-accent/40 hover:bg-accent-bg hover:text-accent-dim"
-              >
+              <ButtonLink href={project.liveUrl} variant="ghost">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
                 Live site
-              </Link>
+              </ButtonLink>
             )}
-            {project.npmPackage && (
-              <Link
-                href={`https://www.npmjs.com/package/${project.npmPackage}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 font-display text-fluid-sm font-medium text-ink transition-all hover:border-accent/40 hover:bg-accent-bg hover:text-accent-dim"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 780 250" fill="currentColor" aria-hidden>
-                  <path d="M240 250V0h300v250h-60V50h-60v200H240zM0 0h180v250H60v-50H0V0zm60 50v100h60V50H60zm480 0v200h60V50h60v150h60V0H480v50z"/>
+            {project.githubUrl && (
+              <ButtonLink href={project.githubUrl} variant="ghost">
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z" />
                 </svg>
-                npm
-              </Link>
+                View source
+              </ButtonLink>
             )}
-            {project.demoPath === "/poker-lab" ? (
-              <PokerLabModal />
-            ) : project.demoPath ? (
-              /* a whole interactive desk behind this — fetch it on intent, not for every reader */
-              <IntentLink
-                href={project.demoPath}
-                className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 font-display text-fluid-sm font-semibold text-white transition-all hover:bg-accent-dim"
-              >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 3l14 9-14 9V3z" />
+            {registryLinks(project).map((r) => (
+              <ButtonLink key={r.href} href={r.href} variant="ghost">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
                 </svg>
-                Open live demo
-              </IntentLink>
-            ) : null}
-            {project.extraDemos?.map((d) => (
-              <IntentLink
-                key={d.path}
-                href={d.path}
-                className="inline-flex items-center gap-2 rounded-lg border border-accent/40 bg-accent-bg px-4 py-2 font-display text-fluid-sm font-medium text-accent-dim transition-all hover:border-accent hover:text-ink"
-              >
-                {d.label}
-              </IntentLink>
+                {r.label}
+              </ButtonLink>
             ))}
           </div>
 
