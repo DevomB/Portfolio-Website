@@ -145,7 +145,7 @@ export default function AdversarialTape() {
                     <td className="px-1 py-1 text-right tabular-nums">{money(w.worstPnl)}</td>
                     <td className="px-1 py-1 text-right tabular-nums text-danger">{money(w.worstPnl - w.basePnl)}</td>
                     <td className="px-1 py-1">
-                      <button type="button" onClick={() => { setViewing(w); setHover(null); }} className="text-accent hover:text-accent-dim transition-colors">seed {w.seed} ↗</button>
+                      <button type="button" onClick={() => { setViewing(w); setHover(null); }} className="text-accent hover:text-accent-dim transition-colors">seed {w.seed}</button>
                     </td>
                   </tr>
                 ))}
