@@ -110,7 +110,7 @@ export default function AdversarialTape() {
           <div className="flex flex-wrap items-baseline justify-between gap-2 px-1 pb-2">
             <p className="font-mono text-fluid-xs text-muted">price · original tape vs the worst world found</p>
             {progress && (
-              <p className="font-mono text-[0.6rem] text-muted/70">
+              <p className="font-mono text-fluid-xs text-muted">
                 {Math.round(progress.evalsPerSec)} backtests/s · {progress.evals} evaluated · {progress.accepted} accepted · T={progress.temperature.toFixed(1)}
               </p>
             )}
@@ -131,10 +131,10 @@ export default function AdversarialTape() {
         <div className="card-soft p-4">
           <p className="font-mono text-fluid-xs text-muted px-1">worst worlds found on this browser</p>
           {worlds.length === 0 ? (
-            <p className="mt-2 px-1 font-mono text-[0.62rem] text-muted/70">none yet — the leaderboard fills as attacks finish</p>
+            <p className="mt-2 px-1 font-mono text-fluid-xs text-muted">none yet — the leaderboard fills as attacks finish</p>
           ) : (
             <div className="mt-2 overflow-x-auto">
-            <table className="w-full font-mono text-[0.66rem]">
+            <table className="w-full font-mono text-fluid-xs">
               <thead><tr className="text-left text-muted"><th className="px-1 py-1 font-normal">#</th><th className="px-1 py-1 font-normal">strategy</th><th className="px-1 py-1 font-normal text-right">original</th><th className="px-1 py-1 font-normal text-right">worst</th><th className="px-1 py-1 font-normal text-right">damage</th><th className="px-1 py-1 font-normal">tape</th></tr></thead>
               <tbody>
                 {worlds.map((w, i) => (
@@ -145,7 +145,7 @@ export default function AdversarialTape() {
                     <td className="px-1 py-1 text-right tabular-nums">{money(w.worstPnl)}</td>
                     <td className="px-1 py-1 text-right tabular-nums text-danger">{money(w.worstPnl - w.basePnl)}</td>
                     <td className="px-1 py-1">
-                      <button type="button" onClick={() => { setViewing(w); setHover(null); }} className="text-accent hover:text-accent-dim transition-colors">seed {w.seed}</button>
+                      <button type="button" onClick={() => { setViewing(w); setHover(null); }} className="text-accent-dim transition-colors hover:text-ink">seed {w.seed}</button>
                     </td>
                   </tr>
                 ))}
@@ -154,7 +154,7 @@ export default function AdversarialTape() {
             </div>
           )}
           {viewing && (
-            <button type="button" onClick={() => setViewing(null)} className="mt-2 px-1 font-mono text-[0.62rem] text-muted hover:text-ink transition-colors">← back to the live run</button>
+            <button type="button" onClick={() => setViewing(null)} className="mt-2 px-1 font-mono text-fluid-xs text-muted hover:text-ink transition-colors">← back to the live run</button>
           )}
         </div>
       </div>
@@ -163,7 +163,7 @@ export default function AdversarialTape() {
       <div className="min-w-0 space-y-6">
         <div className="card-soft p-5">
           <p className="font-mono text-fluid-xs text-muted">worst P&amp;L found</p>
-          <p className={`mt-2 font-sans text-[2.6rem] font-bold leading-none tracking-tight ${shownWorst ? (shownWorst.pnl < 0 ? "text-danger" : "text-ink") : "text-muted/40"}`}>
+          <p className={`mt-2 font-sans text-[2.6rem] font-bold leading-none tracking-tight ${shownWorst ? (shownWorst.pnl < 0 ? "text-danger" : "text-ink") : "text-muted"}`}>
             {shownWorst ? money(shownWorst.pnl) : "—"}
           </p>
           <dl className="mt-4 space-y-2 font-mono text-fluid-xs">
@@ -177,8 +177,8 @@ export default function AdversarialTape() {
             </Button>
             {running && <Button variant="ghost" onClick={worker.stop}>stop</Button>}
           </div>
-          {error && <p className="mt-3 font-mono text-[0.62rem] text-danger break-words">{error}</p>}
-          <p className="mt-4 font-mono text-[0.6rem] leading-relaxed text-muted/70">
+          {error && <p className="mt-3 font-mono text-fluid-xs text-danger break-words">{error}</p>}
+          <p className="mt-4 font-mono text-fluid-xs leading-relaxed text-muted">
             athenas-pallas 5.0.1 · wasm32-wasip1 · runs in this tab · endpoints pinned · |daily move| ≤ 6% · vol ≤ {volCap.toFixed(2)}× original
           </p>
         </div>
@@ -189,15 +189,15 @@ export default function AdversarialTape() {
             <div className="grid grid-cols-2 gap-1.5">
               {STRATEGIES.map((s) => (
                 <button key={s.key} type="button" onClick={() => setStrategy(s.key)} disabled={running}
-                        className={`rounded-md px-2 py-1.5 text-left font-mono text-[0.66rem] transition-colors ${strategy === s.key ? "bg-accent-bg text-accent-dim" : "text-muted hover:text-ink hover:bg-surface"}`}>
+                        className={`rounded-md px-2 py-1.5 text-left font-mono text-fluid-xs transition-colors ${strategy === s.key ? "bg-accent-bg text-accent-dim" : "text-muted hover:text-ink hover:bg-surface"}`}>
                   {s.label}
                 </button>
               ))}
             </div>
-            <p className="mt-2 font-mono text-[0.6rem] text-muted/70 leading-relaxed">{strat.blurb}</p>
+            <p className="mt-2 font-mono text-fluid-xs text-muted leading-relaxed">{strat.blurb}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-3 gap-y-2 font-mono text-[0.66rem]">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2 font-mono text-fluid-xs">
             {strategy === "sma_cross" && (<>
               <label className="text-muted">fast<input type="number" min={2} max={60} value={params.fast} onChange={(e) => set("fast", +e.target.value)} disabled={running} className="mt-1 w-full rounded border border-border bg-surface px-2 py-1 text-ink" /></label>
               <label className="text-muted">slow<input type="number" min={3} max={120} value={params.slow} onChange={(e) => set("slow", +e.target.value)} disabled={running} className="mt-1 w-full rounded border border-border bg-surface px-2 py-1 text-ink" /></label>
@@ -211,7 +211,7 @@ export default function AdversarialTape() {
             <label className="text-muted">qty<input type="number" min={1} max={100} value={params.qty} onChange={(e) => set("qty", +e.target.value)} disabled={running} className="mt-1 w-full rounded border border-border bg-surface px-2 py-1 text-ink" /></label>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-3 gap-y-2 font-mono text-[0.66rem]">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2 font-mono text-fluid-xs">
             <label className="text-muted">tape seed
               <div className="mt-1 flex gap-1">
                 <input type="number" value={seed} onChange={(e) => setSeed(+e.target.value)} disabled={running} className="w-full rounded border border-border bg-surface px-2 py-1 text-ink" />

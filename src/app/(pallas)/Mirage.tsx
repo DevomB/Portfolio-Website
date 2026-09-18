@@ -229,7 +229,7 @@ export default function Mirage() {
               <span className="inline-flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-sm border-2 border-dashed" style={{ borderColor: PLATEAU }} />plateau</span>
               <span className="inline-flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: WALK }} />walk-forward pick, by quarter</span>
             </p>
-            <p className="font-mono text-[0.6rem] text-muted/70">
+            <p className="font-mono text-fluid-xs text-muted">
               {progress && running ? `${phaseLabel} · ${progress.done}/${progress.total} · ${Math.round(progress.evalsPerSec)} backtests/s` : result ? `${result.evals.toLocaleString()} backtests · ${(result.ms / 1000).toFixed(1)} s · in this tab` : "run to sweep"}
             </p>
           </div>
@@ -241,14 +241,14 @@ export default function Mirage() {
                   {fmt(shownMetric, scoreOf(hovered.score))}
                   <span className="ml-2 font-mono text-fluid-xs font-normal text-muted">{hovered.cell.label}</span>
                 </p>
-                <p className="mt-1 font-mono text-[0.6rem] text-muted">
+                <p className="mt-1 font-mono text-fluid-xs text-muted">
                   #{ranks[cellHover!]} of {cells.length} · P&L {money(hovered.score.pnl)} · Sharpe {sharpeFmt(hovered.score.sharpe)} · {hovered.score.trades} trades
                   {result?.peak === cellHover ? " · the peak" : ""}{result?.plateau === cellHover ? " · the plateau" : ""}
                   {walk.some((f) => f.pick === cellHover) ? ` · walk-forward Q${walk.filter((f) => f.pick === cellHover).map((f) => f.fold).join(", Q")}` : ""}
                 </p>
               </div>
             )}
-            {error && <p className="absolute right-3 top-3 font-mono text-[0.62rem] text-danger">{error}</p>}
+            {error && <p className="absolute right-3 top-3 font-mono text-fluid-xs text-danger">{error}</p>}
           </div>
         </div>
 
@@ -260,18 +260,18 @@ export default function Mirage() {
                      labels={["peak", "plateau", "walk-forward", "buy & hold (reference)"]} colors={[PEAK, PLATEAU, WALK, HOLD]} baseline={INITIAL_BALANCE}
                      hover={chartHover} onHover={setChartHover} format={(v) => "$" + Math.round(v).toLocaleString("en-US")}
                      empty="the three picks are graded here once the sweep finishes" />
-          {result && <p className="mt-2 px-1 font-mono text-[0.62rem] text-muted/70">buy &amp; hold is what simply being long made this year — a pick that cannot beat it found nothing</p>}
+          {result && <p className="mt-2 px-1 font-mono text-fluid-xs text-muted">buy &amp; hold is what simply being long made this year — a pick that cannot beat it found nothing</p>}
         </div>
 
         {/* ── the noise test ── */}
         <div className="card-soft p-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2 px-1 pb-1">
             <p className="font-mono text-fluid-xs text-muted">shuffled worlds · the same in-sample returns in a random order, the whole grid re-swept, the best cell kept</p>
-            <p className="font-mono text-[0.6rem] text-muted/70">{noiseMax.length} of {ran ? permutations : permutations} worlds</p>
+            <p className="font-mono text-fluid-xs text-muted">{noiseMax.length} of {ran ? permutations : permutations} worlds</p>
           </div>
           <NoiseStrip values={noiseMax} observed={peakScore} metric={shownMetric} />
           {p !== null && result && (
-            <p className="mt-1 px-1 font-mono text-[0.62rem] text-muted">
+            <p className="mt-1 px-1 font-mono text-fluid-xs text-muted">
               p = {p.toFixed(2)} · {noiseMax.filter((v) => v >= peakScore!).length} of {noiseMax.length} worlds with nothing in them beat your peak
               {" · "}p = (1 + that count) / (worlds + 1)
             </p>
@@ -283,7 +283,7 @@ export default function Mirage() {
           <details className="card-soft p-4">
             <summary className="cursor-pointer font-mono text-fluid-xs text-muted hover:text-ink">every cell of the sweep, ranked</summary>
             <div className="mt-3 overflow-x-auto">
-              <table className="w-full font-mono text-[0.66rem]">
+              <table className="w-full font-mono text-fluid-xs">
                 <thead><tr className="text-left text-muted"><th className="px-1 py-1 font-normal">#</th><th className="px-1 py-1 font-normal">parameters</th><th className="px-1 py-1 font-normal text-right">in-sample P&L</th><th className="px-1 py-1 font-normal text-right">Sharpe</th><th className="px-1 py-1 font-normal text-right">trades</th><th className="px-1 py-1 font-normal">picked by</th></tr></thead>
                 <tbody>
                   {cells.map((c) => ({ c, s: result.grid[c.index]! })).sort((a, b) => scoreOf(b.s) - scoreOf(a.s)).map(({ c, s }, i) => (
@@ -309,16 +309,16 @@ export default function Mirage() {
       <div className="min-w-0 space-y-6">
         <div className="card-soft p-5">
           <p className="font-mono text-fluid-xs text-muted">the in-sample peak, held out</p>
-          <p className={`mt-2 font-sans text-[2.4rem] font-bold leading-none tracking-tight ${result ? (result.holdout.peak.pnl < 0 ? "text-danger" : "text-ink") : "text-muted/40"}`}>
+          <p className={`mt-2 font-sans text-[2.4rem] font-bold leading-none tracking-tight ${result ? (result.holdout.peak.pnl < 0 ? "text-danger" : "text-ink") : "text-muted"}`}>
             {result ? money(result.holdout.peak.pnl) : "—"}
           </p>
           {result && (
-            <p className="mt-2 font-mono text-[0.62rem] text-muted">
+            <p className="mt-2 font-mono text-fluid-xs text-muted">
               after showing {money(result.grid[result.peak]!.pnl)} in-sample · {cells[result.peak]!.label}
             </p>
           )}
           {result && (
-            <table className="mt-4 w-full font-mono text-[0.64rem]">
+            <table className="mt-4 w-full font-mono text-fluid-xs">
               <thead><tr className="text-left text-muted"><th className="py-1 font-normal">procedure</th><th className="py-1 font-normal text-right">in-sample</th><th className="py-1 font-normal text-right">held out</th></tr></thead>
               <tbody>
                 {([
@@ -337,7 +337,7 @@ export default function Mirage() {
             </table>
           )}
           {result && p !== null && (
-            <p className="mt-4 font-mono text-[0.62rem] leading-relaxed text-muted">
+            <p className="mt-4 font-mono text-fluid-xs leading-relaxed text-muted">
               {p > 0.1
                 ? <>Luck alone produces a peak this good in <span className="text-ink">{Math.round(p * 100)}%</span> of shuffled worlds. The peak is a mirage; the held-out year is where it evaporates.</>
                 : p > 0.05
@@ -351,7 +351,7 @@ export default function Mirage() {
             </Button>
             {running && <Button variant="ghost" onClick={worker.stop}>stop</Button>}
           </div>
-          <p className="mt-4 font-mono text-[0.6rem] leading-relaxed text-muted/70">
+          <p className="mt-4 font-mono text-fluid-xs leading-relaxed text-muted">
             athenas-pallas 5.0.1 · wasm32-wasip1 · {ran ? `${FAMILIES[ran.family].label} on ${worldLabel(ran.kind, ran.strength)}, seed ${ran.seed}` : "nothing run yet"} · qty 50 · balance {money(INITIAL_BALANCE).slice(1)}
           </p>
         </div>
@@ -362,16 +362,16 @@ export default function Mirage() {
             <div className="grid grid-cols-3 gap-1.5">
               {WORLDS.map((w) => (
                 <button key={w.key} type="button" onClick={() => setKind(w.key)} disabled={running}
-                        className={`rounded-md px-2 py-1.5 text-left font-mono text-[0.64rem] transition-colors ${kind === w.key ? "bg-accent-bg text-accent-dim" : "text-muted hover:text-ink hover:bg-surface"}`}>
+                        className={`rounded-md px-2 py-1.5 text-left font-mono text-fluid-xs transition-colors ${kind === w.key ? "bg-accent-bg text-accent-dim" : "text-muted hover:text-ink hover:bg-surface"}`}>
                   {w.label}
                 </button>
               ))}
             </div>
-            <p className="mt-2 font-mono text-[0.6rem] text-muted/70 leading-relaxed">{WORLDS.find((w) => w.key === kind)!.blurb}</p>
-            <label className={`mt-3 block font-mono text-[0.66rem] text-muted ${kind === "noise" ? "opacity-40" : ""}`}>
+            <p className="mt-2 font-mono text-fluid-xs text-muted leading-relaxed">{WORLDS.find((w) => w.key === kind)!.blurb}</p>
+            <label className="mt-3 block font-mono text-fluid-xs text-muted">
               signal strength · φ = {phiOf(kind, strength).toFixed(2)} of ±{PHI_MAX}
               <input type="range" min={0} max={1} step={0.05} value={strength} onChange={(e) => setStrength(+e.target.value)} disabled={running || kind === "noise"} className="mt-1 w-full" style={{ accentColor: "var(--color-accent)" }} />
-              <span className="block text-[0.58rem] text-muted/70">log-returns r = φ·r₋₁ + ε · same volatility in every world</span>
+              <span className="block text-fluid-xs text-muted">log-returns r = φ·r₋₁ + ε · same volatility in every world</span>
             </label>
           </div>
 
@@ -380,15 +380,15 @@ export default function Mirage() {
             <div className="grid grid-cols-3 gap-1.5">
               {(Object.keys(FAMILIES) as Family[]).map((k) => (
                 <button key={k} type="button" onClick={() => setFamily(k)} disabled={running}
-                        className={`rounded-md px-2 py-1.5 text-left font-mono text-[0.64rem] transition-colors ${family === k ? "bg-accent-bg text-accent-dim" : "text-muted hover:text-ink hover:bg-surface"}`}>
+                        className={`rounded-md px-2 py-1.5 text-left font-mono text-fluid-xs transition-colors ${family === k ? "bg-accent-bg text-accent-dim" : "text-muted hover:text-ink hover:bg-surface"}`}>
                   {FAMILIES[k].label}
                 </button>
               ))}
             </div>
-            <p className="mt-2 font-mono text-[0.6rem] text-muted/70 leading-relaxed">{spec.blurb} · grid {FAMILIES[family].x.label} × {FAMILIES[family].y?.label ?? "—"} · {gridCells(family).length} cells</p>
+            <p className="mt-2 font-mono text-fluid-xs text-muted leading-relaxed">{spec.blurb} · grid {FAMILIES[family].x.label} × {FAMILIES[family].y?.label ?? "—"} · {gridCells(family).length} cells</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-3 gap-y-2 font-mono text-[0.66rem]">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2 font-mono text-fluid-xs">
             <label className="text-muted">select by
               <select value={metric} onChange={(e) => setMetric(e.target.value as Metric)} disabled={running} className="mt-1 w-full rounded border border-border bg-surface px-2 py-1 text-ink">
                 <option value="pnl">P&L</option>
@@ -407,7 +407,7 @@ export default function Mirage() {
               </div>
             </label>
           </div>
-          <p className="font-mono text-[0.58rem] leading-relaxed text-muted/70">
+          <p className="font-mono text-fluid-xs leading-relaxed text-muted">
             in-sample: bars 1–{IS_BARS}. held out: bars {IS_BARS + 1}–{IS_BARS + OOS_BARS}, each pick warmed up on the 250 bars before. walk-forward re-picks each quarter on the trailing 250 bars.
           </p>
         </div>
