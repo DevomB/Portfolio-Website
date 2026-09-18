@@ -1,22 +1,53 @@
 "use client";
 
 import { AnimatePresence } from "framer-motion";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Splash from "@/app/(home)/Splash";
 import { LoadedContext } from "@/app/(home)/LoadedContext";
 
 type Stage = "checking" | "intro" | "ready";
 
-// Module scope is the exact signal for "was this a real page load": a refresh
-// or fresh visit re-evaluates the module (flag resets, splash plays); client-
-// side navigation around the site keeps the same JS context (flag survives,
-// terms -> home goes straight to the page). No storage involved, so a refresh
-// always replays.
+// The splash is the front door, and a visit walks through it once: on the
+// first hard load of "/" in a browser session. Three signals decide it.
+//  - The navigation entry: this document was loaded at "/". Landing on an
+//    inner page and clicking home is client-side navigation, and never plays.
+//  - Module scope: this JS context has not played it yet (home -> a demo ->
+//    home again keeps the context).
+//  - sessionStorage: this session has not played it yet, so a reload of "/"
+//    goes straight to the page. If storage throws, it counts as unplayed.
+// `?hand=` previews always play — they are pointless without it.
 let introPlayedThisLoad = false;
+const SESSION_KEY = "devomb.splash";
+
+function loadedAtHome(): boolean {
+  const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+  try {
+    return new URL(nav?.name ?? window.location.href).pathname === "/";
+  } catch {
+    return true;
+  }
+}
+
+function playedThisSession(): boolean {
+  try {
+    return window.sessionStorage.getItem(SESSION_KEY) === "played";
+  } catch {
+    return false;
+  }
+}
+
+function shouldPlay(): boolean {
+  if (new URLSearchParams(window.location.search).has("hand")) return true;
+  const play = !introPlayedThisLoad && loadedAtHome() && !playedThisSession();
+  if (play) {
+    introPlayedThisLoad = true;
+    try { window.sessionStorage.setItem(SESSION_KEY, "played"); } catch {}
+  }
+  return play;
+}
 
 export default function PageWrapper({ children }: { children: ReactNode }) {
-  // The splash plays on EVERY load — it is the site's front door, not a
-  // one-time onboarding. Any click, key or scroll skips it.
+  // Any click, key or scroll skips the splash.
   //
   // The page content is mounted from the very first render, underneath.
   // It used to mount at the hand-off, which put the entire page mount — 250+
@@ -37,11 +68,12 @@ export default function PageWrapper({ children }: { children: ReactNode }) {
   // the SSR HTML too, so there is never a flash of content before JS.
   const [stage, setStage] = useState<Stage>("checking");
 
+  // decided once per mount: shouldPlay() spends the session's one play, and
+  // dev Strict Mode runs this effect twice on the same mount
+  const play = useRef<boolean | null>(null);
   useEffect(() => {
-    // ?hand= previews always run the splash — they are pointless without it
-    const force = new URLSearchParams(window.location.search).has("hand");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setStage(introPlayedThisLoad && !force ? "ready" : "intro");
+    play.current ??= shouldPlay();
+    setStage(play.current ? "intro" : "ready");
   }, []);
 
   const ready = stage === "ready";
@@ -53,13 +85,7 @@ export default function PageWrapper({ children }: { children: ReactNode }) {
       )}
       <AnimatePresence>
         {stage === "intro" && (
-          <Splash
-            key="loading"
-            onComplete={() => {
-              introPlayedThisLoad = true;
-              setStage("ready");
-            }}
-          />
+          <Splash key="loading" onComplete={() => setStage("ready")} />
         )}
       </AnimatePresence>
       {/* inert while hidden: no focus, no pointer, out of the a11y tree.
