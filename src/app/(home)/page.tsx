@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PageWrapper from "@/app/(home)/PageWrapper";
 import { pageMetadata } from "@/app/(chrome)/pageMetadata";
+import { PROFILES, SITE_NAME, SITE_URL } from "@/lib/site";
 import Navbar from "@/app/(chrome)/Navbar";
 import HeroSection from "@/app/(home)/HeroSection";
 import AboutSection from "@/app/(home)/AboutSection";
@@ -15,9 +16,23 @@ export const metadata: Metadata = pageMetadata({
   path: "/",
 });
 
+/* Who the site is about, for search engines: the name, the site, and the
+   same public profiles the footer links. Nothing else. */
+const person = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: SITE_NAME,
+  url: SITE_URL,
+  sameAs: PROFILES.map((p) => p.href),
+};
+
 export default function Home() {
   return (
     <PageWrapper>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(person).replace(/</g, "\\u003c") }}
+      />
       <Navbar />
       <main className="min-h-screen">
         <div className="page-shell">

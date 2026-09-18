@@ -1,11 +1,10 @@
 import Link from "next/link";
 import IntentLink from "@/app/(chrome)/IntentLink";
+import { PROFILES } from "@/lib/site";
 
+// the public profiles (shared with the home page's JSON-LD), then the legal pages
 const links = [
-  { label: "GitHub", href: "https://github.com/DevomB", external: true },
-  { label: "LinkedIn", href: "https://www.linkedin.com/in/devomb/", external: true },
-  { label: "NPM", href: "https://www.npmjs.com/~devomb", external: true },
-  { label: "Crates", href: "https://crates.io/users/DevomB", external: true },
+  ...PROFILES.map((p) => ({ ...p, external: true })),
   { label: "Privacy", href: "/privacy", external: false },
   { label: "Terms", href: "/terms", external: false },
 ];
