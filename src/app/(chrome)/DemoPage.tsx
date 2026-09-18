@@ -26,7 +26,7 @@ export function BackLink({ href, children }: { href: string; children: ReactNode
 /** A link to the engine behind a demo, inside its lede. */
 export function LedeLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-dim transition-colors">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent-dim transition-colors hover:text-ink">
       {children}
     </a>
   );

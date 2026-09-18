@@ -41,7 +41,7 @@ export default function Footer() {
             ),
           )}
         </div>
-        <p className="mt-5 text-center font-mono text-fluid-xs text-muted opacity-60">
+        <p className="mt-5 text-center font-mono text-fluid-xs text-muted">
           © {year} Devom Brahmbhatt
         </p>
       </div>
