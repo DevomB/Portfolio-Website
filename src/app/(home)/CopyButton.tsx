@@ -19,7 +19,7 @@ export default function CopyButton({ text }: { text: string }) {
     <button
       type="button"
       onClick={copy}
-      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-[0.65rem] font-medium transition-all"
+      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 font-mono text-fluid-xs font-medium transition-all"
       style={
         state === "copied"
           ? { background: "var(--color-accent-bg)", color: "var(--color-accent-dim)" }

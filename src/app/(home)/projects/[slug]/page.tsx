@@ -137,7 +137,7 @@ export default async function ProjectPage({
           {project.npmPackage && (
             <div className="mb-10 rounded-xl border border-accent/20 bg-code-bg overflow-hidden">
               <div className="flex items-center justify-between border-b border-accent/10 px-4 py-2.5">
-                <span className="font-mono text-fluid-xs text-accent/70">npm</span>
+                <span className="font-mono text-fluid-xs text-accent-dim">npm</span>
                 <CopyButton text={`npm install ${project.npmPackage}`} />
               </div>
               <pre className="px-4 py-3 font-mono text-fluid-xs text-ink overflow-x-auto">
@@ -150,7 +150,7 @@ export default async function ProjectPage({
           {project.pypiPackage && (
             <div className="mb-10 rounded-xl border border-accent/20 bg-code-bg overflow-hidden">
               <div className="flex items-center justify-between border-b border-accent/10 px-4 py-2.5">
-                <span className="font-mono text-fluid-xs text-accent/70">pip</span>
+                <span className="font-mono text-fluid-xs text-accent-dim">pip</span>
                 <CopyButton text={`pip install ${project.pypiPackage}`} />
               </div>
               <pre className="px-4 py-3 font-mono text-fluid-xs text-ink overflow-x-auto">
