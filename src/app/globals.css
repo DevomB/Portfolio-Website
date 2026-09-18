@@ -201,16 +201,6 @@ body {
       display: none;
     }
   }
-
-  /* subtle SQL/backend text that floats in the hero background */
-  .sql-ghost {
-    font-family: var(--font-mono), ui-monospace, monospace;
-    color: var(--color-accent);
-    opacity: 0.14;
-    user-select: none;
-    pointer-events: none;
-    white-space: nowrap;
-  }
 }
 
 /* Pointer-aware copy: "click" on mouse devices, "tap" on touch. Pure CSS so

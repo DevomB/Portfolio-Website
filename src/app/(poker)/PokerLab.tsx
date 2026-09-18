@@ -315,12 +315,6 @@ export default function PokerLab() {
             )}
           </dl>
 
-          {!finalResult && !running && (
-            <p className="mt-5 font-mono whitespace-pre"
-              style={{ fontSize: "0.6rem", color: "var(--color-muted)", opacity: 0.4, lineHeight: 1.7 }}>
-              {`SELECT equity\nFROM simulations\nWHERE hero = '${heroLine || "?"}'\nLIMIT 1;`}
-            </p>
-          )}
           {running && (
             <div className="mt-5 flex items-center gap-2">
               <m.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}

@@ -11,11 +11,6 @@ const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%!&" as const;
 const NAME = "Devom Brahmbhatt";
 const TITLE_LINES = ["Trader", "Engineer", "Researcher"] as const;
 
-const SQL_GHOSTS = [
-  { text: "SELECT * FROM projects WHERE featured = true ORDER BY created_at DESC;", top: "12%", left: "-1%", rotate: -1.5 },
-  { text: "EXPLAIN ANALYZE SELECT * FROM events WHERE created_at > NOW() - INTERVAL '1 hour' AND user_id = $1;", top: "80%", right: "0%", rotate: 1 },
-];
-
 function useScramble(text: string) {
   const [display, setDisplay] = useState(text);
   const intervalRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
@@ -64,58 +59,6 @@ export default function HeroSection() {
 
   return (
     <section className="relative hero-fold overflow-hidden flex items-center">
-      {/* background wash */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-        {/* teal — top right */}
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: "55vw", height: "55vw",
-            top: "-22%", right: "-10%",
-            background: "radial-gradient(circle, rgb(var(--brand-purple-rgb) / 0.22) 0%, transparent 68%)",
-            filter: "blur(52px)",
-          }}
-        />
-        {/* joker green — bottom left */}
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: "42vw", height: "42vw",
-            bottom: "-15%", left: "-6%",
-            background: "radial-gradient(circle, rgb(var(--brand-green-rgb) / 0.16) 0%, transparent 68%)",
-            filter: "blur(60px)",
-          }}
-        />
-        {/* teal — mid accent */}
-        <div
-          className="absolute rounded-full"
-          style={{
-            width: "22vw", height: "22vw",
-            top: "42%", left: "28%",
-            background: "radial-gradient(circle, rgb(var(--brand-purple-rgb) / 0.07) 0%, transparent 70%)",
-            filter: "blur(44px)",
-          }}
-        />
-      </div>
-
-      {/* SQL ghost text */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-        {SQL_GHOSTS.map((g, i) => (
-          <span
-            key={i}
-            className="sql-ghost absolute text-[0.55rem]"
-            style={{
-              top: g.top,
-              left: "left" in g ? (g as typeof g & { left: string }).left : undefined,
-              right: "right" in g ? (g as typeof g & { right: string }).right : undefined,
-              transform: `rotate(${g.rotate}deg)`,
-            }}
-          >
-            {g.text}
-          </span>
-        ))}
-      </div>
-
       <div className="relative w-full grid grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_400px] lg:gap-24">
         <div>
           <m.h2
