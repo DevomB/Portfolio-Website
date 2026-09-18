@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
+import { Button } from "@/app/(chrome)/Button";
 
 /* ── The Card Sum Options Desk ────────────────────────────────────────────────
    IMC's mock trading game: options on the sum of n cards drawn from a deck.
@@ -163,9 +164,7 @@ export default function CardDesk() {
             })}
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" onClick={drawRandom} disabled={expired} className="rounded-md px-3.5 py-1.5 font-mono text-fluid-xs font-semibold transition-colors disabled:opacity-40" style={{ background: "var(--color-accent)", color: "var(--color-surface-elevated)" }}>
-              draw random
-            </button>
+            <Button size="sm" onClick={drawRandom} disabled={expired}>draw random</Button>
             <button type="button" onClick={undo} disabled={seen.length === 0} className="chip-soft px-3.5 py-1.5 font-mono text-fluid-xs transition-colors hover:text-accent-dim disabled:opacity-40">
               undo
             </button>

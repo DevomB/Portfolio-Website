@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { m } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ButtonLink } from "@/app/(chrome)/Button";
 import ServerLog from "@/app/(home)/ServerLog";
 import { useInkAlign } from "@/app/(home)/useInkAlign";
 import { useLoaded } from "@/app/(home)/LoadedContext";
@@ -147,29 +147,8 @@ export default function HeroSection() {
           </m.p>
 
           <m.div {...fade(0.3)} className="flex items-center gap-3">
-            <Link
-              href="#projects"
-              className="inline-flex items-center gap-2 rounded-md px-4 py-2 font-display text-sm font-semibold transition-colors"
-              style={{ background: "var(--color-accent)", color: "var(--color-surface-elevated)", fontSize: "var(--text-sm)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-accent-dim)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--color-accent)")}
-            >
-              View Projects
-            </Link>
-            <Link
-              href="https://github.com/DevomB"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-md border px-4 py-2 font-display text-sm font-medium transition-colors hover:border-accent/40 hover:text-accent"
-              style={{
-                borderColor: "var(--color-border)",
-                background: "transparent",
-                color: "var(--color-muted)",
-                fontSize: "var(--text-sm)",
-              }}
-            >
-              GitHub
-            </Link>
+            <ButtonLink href="#projects">View Projects</ButtonLink>
+            <ButtonLink href="https://github.com/DevomB" variant="ghost">GitHub</ButtonLink>
           </m.div>
         </div>
 

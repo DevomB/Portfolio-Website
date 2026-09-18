@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { m, AnimatePresence, LazyMotion, domMax } from "framer-motion";
+import { Button } from "@/app/(chrome)/Button";
 import { dealRandomHoleCards, parseCodes } from "@/app/(poker)/poker";
 import { findSampleWin, type SampleWin } from "@/app/(poker)/poker";
 
@@ -266,18 +267,8 @@ export default function PokerLab() {
 
         {/* Buttons */}
         <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={randomizeHero} disabled={running}
-            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-fluid-sm font-medium text-muted hover:text-ink transition-colors disabled:opacity-50"
-            style={{ background: "var(--color-surface-elevated)" }}>
-            Random hero
-          </button>
-          <button type="button" onClick={run} disabled={running}
-            className="inline-flex items-center gap-2 rounded-md px-5 py-2 text-fluid-sm font-semibold transition-colors disabled:opacity-50"
-            style={{ background: "var(--color-accent)", color: "var(--color-surface-elevated)" }}
-            onMouseEnter={(e) => { if (!running) e.currentTarget.style.background = "var(--color-accent-dim)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "var(--color-accent)"; }}>
-            {running ? "Running…" : "Run Monte Carlo"}
-          </button>
+          <Button variant="ghost" onClick={randomizeHero} disabled={running}>Random hero</Button>
+          <Button onClick={run} disabled={running}>{running ? "Running…" : "Run Monte Carlo"}</Button>
         </div>
 
         {error && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Button } from "@/app/(chrome)/Button";
 import LineChart from "./LineChart";
 import { money } from "./format";
 import { makeTape, TAPE_LEN, type SearchMessage, type SearchStart } from "./tape";
@@ -171,13 +172,10 @@ export default function AdversarialTape() {
             {progress && <div className="flex justify-between gap-3"><dt className="text-muted">iteration</dt><dd className="text-ink">{progress.iter} / {iters}</dd></div>}
           </dl>
           <div className="mt-5 flex gap-2">
-            <button type="button" onClick={attack} disabled={running}
-                    className="flex-1 rounded-lg bg-accent px-4 py-2 font-display text-fluid-sm font-semibold text-white transition-all hover:bg-accent-dim disabled:opacity-50">
+            <Button onClick={attack} disabled={running} className="flex-1">
               {phase === "loading" ? "loading engine…" : phase === "running" ? "attacking…" : phase === "done" ? "attack again" : "attack"}
-            </button>
-            {running && (
-              <button type="button" onClick={worker.stop} className="rounded-lg border border-border px-3 py-2 font-display text-fluid-sm text-muted hover:text-ink transition-colors">stop</button>
-            )}
+            </Button>
+            {running && <Button variant="ghost" onClick={worker.stop}>stop</Button>}
           </div>
           {error && <p className="mt-3 font-mono text-[0.62rem] text-danger break-words">{error}</p>}
           <p className="mt-4 font-mono text-[0.6rem] leading-relaxed text-muted/70">

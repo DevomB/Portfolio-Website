@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+import { ButtonLink } from "@/app/(chrome)/Button";
 import NotFoundTerminal from "@/app/NotFoundTerminal";
 
 export const metadata: Metadata = {
@@ -24,15 +24,12 @@ export default function NotFound() {
         </div>
 
         <div className="mt-6 flex items-center justify-center">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-display text-fluid-sm font-semibold text-white transition-all hover:bg-accent-dim shadow-sm"
-          >
+          <ButtonLink href="/">
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
             </svg>
             Go home
-          </Link>
+          </ButtonLink>
         </div>
       </div>
     </main>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Button } from "@/app/(chrome)/Button";
 import LineChart from "./LineChart";
 import { clamp } from "@/lib/num";
 import { money, sharpeFmt } from "./format";
@@ -313,13 +314,10 @@ export default function Mirage() {
             </p>
           )}
           <div className="mt-5 flex gap-2">
-            <button type="button" onClick={run} disabled={running}
-                    className="flex-1 rounded-lg bg-accent px-4 py-2 font-display text-fluid-sm font-semibold text-white transition-all hover:bg-accent-dim disabled:opacity-50">
+            <Button onClick={run} disabled={running} className="flex-1">
               {phase === "loading" ? "loading engine…" : phase === "running" ? "sweeping…" : phase === "done" ? "run again" : "run the experiment"}
-            </button>
-            {running && (
-              <button type="button" onClick={worker.stop} className="rounded-lg border border-border px-3 py-2 font-display text-fluid-sm text-muted hover:text-ink transition-colors">stop</button>
-            )}
+            </Button>
+            {running && <Button variant="ghost" onClick={worker.stop}>stop</Button>}
           </div>
           <p className="mt-4 font-mono text-[0.6rem] leading-relaxed text-muted/70">
             athenas-pallas 5.0.1 · wasm32-wasip1 · {ran ? `${FAMILIES[ran.family].label} on ${worldLabel(ran.kind, ran.strength)}, seed ${ran.seed}` : "nothing run yet"} · qty 50 · balance {money(INITIAL_BALANCE).slice(1)}
