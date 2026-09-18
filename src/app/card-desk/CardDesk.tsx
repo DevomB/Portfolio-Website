@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { Button } from "@/app/(chrome)/Button";
+import { Slider } from "@/app/(chrome)/Slider";
 import { useMoreRight } from "@/app/(chrome)/useMoreRight";
 
 /* ── The Card Sum Options Desk ────────────────────────────────────────────────
@@ -257,7 +258,7 @@ export default function CardDesk() {
           <label className="block mb-4">
             <span className="font-mono text-fluid-xs text-muted">cards drawn (n)</span>
             <div className="mt-2 flex items-center gap-3">
-              <input type="range" min={3} max={12} value={n} onChange={(e) => changeN(Number(e.target.value))} className="w-full accent-[#7c00ff]" />
+              <Slider min={3} max={12} value={n} onChange={(e) => changeN(Number(e.target.value))} className="w-full" />
               <span className="font-mono text-fluid-sm text-ink w-6 text-right">{n}</span>
             </div>
           </label>
@@ -287,7 +288,7 @@ export default function CardDesk() {
 
           <label className="flex items-center justify-between gap-3 cursor-pointer">
             <span className="font-mono text-fluid-xs text-muted">draw with replacement</span>
-            <input type="checkbox" checked={replacement} onChange={(e) => { setReplacement(e.target.checked); setSeen([]); }} className="h-4 w-4 accent-[#09ff00]" />
+            <input type="checkbox" checked={replacement} onChange={(e) => { setReplacement(e.target.checked); setSeen([]); }} className="check" />
           </label>
         </div>
 

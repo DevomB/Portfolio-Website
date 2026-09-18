@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Button } from "@/app/(chrome)/Button";
+import { Slider } from "@/app/(chrome)/Slider";
 import { useWidth } from "@/app/(chrome)/useWidth";
 import { useRem } from "@/app/(chrome)/useRem";
 import LineChart from "./LineChart";
@@ -374,7 +375,7 @@ export default function Mirage() {
             <p className="mt-2 font-mono text-fluid-xs text-muted leading-relaxed">{WORLDS.find((w) => w.key === kind)!.blurb}</p>
             <label className="mt-3 block font-mono text-fluid-xs text-muted">
               signal strength · φ = {phiOf(kind, strength).toFixed(2)} of ±{PHI_MAX}
-              <input type="range" min={0} max={1} step={0.05} value={strength} onChange={(e) => setStrength(+e.target.value)} disabled={running || kind === "noise"} className="mt-1 w-full" style={{ accentColor: "var(--color-accent)" }} />
+              <Slider min={0} max={1} step={0.05} value={strength} onChange={(e) => setStrength(+e.target.value)} disabled={running || kind === "noise"} className="mt-1 w-full" />
               <span className="block text-fluid-xs text-muted">log-returns r = φ·r₋₁ + ε · same volatility in every world</span>
             </label>
           </div>

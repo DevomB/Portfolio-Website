@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Terrain, { type TriFill } from "@/app/(poker)/Terrain";
+import { Slider } from "@/app/(chrome)/Slider";
 import { clamp } from "@/lib/num";
 import BoardPicker, { SUIT_GLYPH, SUIT_RED } from "@/app/(poker)/BoardPicker";
 import RangePainter, { paintPreset } from "@/app/(poker)/RangePainter";
@@ -409,8 +410,7 @@ export default function RiverDecisions() {
                   <span className="text-ink">{d.label}</span>
                   <span className="text-muted">{policy[d.key].toFixed(2)}</span>
                 </span>
-                <input
-                  type="range"
+                <Slider
                   min={0}
                   max={1}
                   step={0.01}
@@ -418,7 +418,6 @@ export default function RiverDecisions() {
                   onChange={(e) => { const v = Number(e.target.value); setPolicy((p) => ({ ...p, [d.key]: v })); }}
                   aria-label={d.label}
                   className="mt-1 w-full"
-                  style={{ accentColor: "var(--color-accent)" }}
                 />
                 <span className="block font-mono text-fluid-xs text-muted">{d.hint}</span>
               </label>

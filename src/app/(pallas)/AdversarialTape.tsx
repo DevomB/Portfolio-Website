@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/app/(chrome)/Button";
+import { Slider } from "@/app/(chrome)/Slider";
 import LineChart from "./LineChart";
 import { money } from "./format";
 import { makeTape, TAPE_LEN, type SearchMessage, type SearchStart } from "./tape";
@@ -224,7 +225,7 @@ export default function AdversarialTape() {
               </select>
             </label>
             <label className="col-span-2 text-muted">volatility budget · {volCap.toFixed(2)}× the original
-              <input type="range" min={1} max={2} step={0.05} value={volCap} onChange={(e) => setVolCap(+e.target.value)} disabled={running} className="mt-1 w-full accent-[var(--color-accent)]" />
+              <Slider min={1} max={2} step={0.05} value={volCap} onChange={(e) => setVolCap(+e.target.value)} disabled={running} className="mt-1 w-full" />
             </label>
           </div>
         </div>

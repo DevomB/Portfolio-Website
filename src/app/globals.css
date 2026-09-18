@@ -210,6 +210,104 @@ body {
       display: none;
     }
   }
+
+  /* Range sliders and the checkbox, drawn the way Chromium draws its own
+     with the site's accent — measured off the native controls at 4×, so at
+     16px they look exactly as they did — but sized in rem, so they grow
+     with the rest of the page on a wide screen. They are still native
+     inputs: keyboard, focus ring and form behaviour are the browser's.
+     `--r` (0..1, set by <Slider>) is where the value sits; the filled track
+     ends under the thumb's centre. Colours are Chromium's form-control
+     palette for this accent, hover and disabled included. */
+  .slider {
+    --fill: var(--color-accent);
+    --fill-edge: rgb(121 59 186);
+    --rest: rgb(239 239 239);
+    --rest-edge: rgb(178 178 178);
+    --thumb: var(--color-accent);
+    --at: calc(0.4375rem + (100% - 0.875rem) * var(--r, 0));
+    appearance: none;
+    height: 1rem;
+    background: transparent;
+  }
+  .slider:hover:not(:disabled) {
+    --fill: rgb(97 0 199);
+    --fill-edge: rgb(88 40 139);
+    --rest: rgb(229 229 229);
+    --rest-edge: rgb(154 154 154);
+  }
+  /* disabled: the rest of the track is the native one's translucent grey as
+     it lands on a card (the only place a slider sits), made opaque so the
+     edge layer beneath cannot show through it */
+  .slider:disabled {
+    --fill: rgb(203 203 203);
+    --fill-edge: rgb(178 178 178);
+    --rest: rgb(85 80 92);
+    --rest-edge: rgb(95 92 100);
+    --thumb: rgb(203 203 203);
+  }
+  .slider::-webkit-slider-runnable-track {
+    box-sizing: border-box;
+    height: 0.5rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    background:
+      linear-gradient(to right, var(--fill) var(--at), var(--rest) var(--at)) padding-box,
+      linear-gradient(to right, var(--fill-edge) var(--at), var(--rest-edge) var(--at)) border-box;
+  }
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 1rem;
+    height: 1rem;
+    margin-top: calc((0.5rem - 2px - 1rem) / 2);
+    border-radius: 50%;
+    background: var(--thumb);
+  }
+  .slider::-moz-range-track {
+    box-sizing: border-box;
+    height: 0.5rem;
+    border: 1px solid var(--rest-edge);
+    border-radius: 0.25rem;
+    background: var(--rest);
+  }
+  .slider::-moz-range-progress {
+    box-sizing: border-box;
+    height: 0.5rem;
+    border: 1px solid var(--fill-edge);
+    border-radius: 0.25rem;
+    background: var(--fill);
+  }
+  .slider::-moz-range-thumb {
+    width: 1rem;
+    height: 1rem;
+    border: 0;
+    border-radius: 50%;
+    background: var(--thumb);
+  }
+
+  .check {
+    appearance: none;
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid rgb(118 118 118);
+    border-radius: 0.125rem;
+    background: #ffffff;
+  }
+  .check:hover {
+    border-color: rgb(79 79 79);
+  }
+  /* the browser's own focus ring, placed where the native checkbox's sits */
+  .check:focus-visible {
+    outline-offset: 3px;
+  }
+  .check:checked {
+    --checked: rgb(9 255 0);
+    border-color: var(--checked);
+    background: var(--checked) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.2 8 6.4 11.2 12.8 3.2' fill='none' stroke='%233b3b3b' stroke-width='2.56'/%3E%3C/svg%3E") border-box center / 100% 100% no-repeat;
+  }
+  .check:checked:hover {
+    --checked: rgb(63 255 56);
+  }
 }
 
 /* Pointer-aware copy: "click" on mouse devices, "tap" on touch. Pure CSS so
