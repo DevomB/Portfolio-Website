@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import Navbar from "@/app/(chrome)/Navbar";
+import Footer from "@/app/(chrome)/Footer";
 
 /* The shell every in-browser demo shares: the chrome, the way back to its
-   project, a // kicker, a title, a lede, then the demo itself. Seven pages
-   used to carry this markup each; a demo page is now its metadata, its lede,
-   and its component. */
+   project, a // kicker, a title, a lede, the demo itself, and the site
+   footer. Seven pages used to carry this markup each; a demo page is now its
+   metadata, its lede, and its component. */
 
 /** The arrow link at the top of demo and legal pages. */
 export function BackLink({ href, children }: { href: string; children: ReactNode }) {
@@ -65,6 +66,7 @@ export default function DemoPage({
           {children}
         </div>
       </main>
+      <Footer />
     </>
   );
 }
