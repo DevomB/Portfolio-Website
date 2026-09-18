@@ -134,7 +134,7 @@ export default function TectonixChart({ points, tool, branch }: Props) {
               href="https://github.com/DevomB/Tectonix"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent hover:text-accent-dim transition-colors"
+              className="text-accent-dim transition-colors hover:text-ink"
             >
               Tectonix
             </a>{" "}
@@ -224,10 +224,10 @@ export default function TectonixChart({ points, tool, branch }: Props) {
                 >
                   <p className="font-sans text-fluid-base font-semibold text-ink leading-none">
                     {(active.signal as number).toLocaleString()}
-                    <span className="ml-1.5 font-mono text-[0.6rem] font-normal text-muted">/ 10,000</span>
+                    <span className="ml-1.5 font-mono text-fluid-xs font-normal text-muted">/ 10,000</span>
                   </p>
                   <p className="mt-1.5 text-fluid-xs text-ink leading-snug">{active.subject}</p>
-                  <p className="mt-1 font-mono text-[0.6rem] text-muted">
+                  <p className="mt-1 font-mono text-fluid-xs text-muted">
                     {active.short} · {rows[hover ?? rows.length - 1]!.dateLabel}
                     {active.bottleneck ? ` · bottleneck ${active.bottleneck}` : ""}
                   </p>
@@ -244,7 +244,7 @@ export default function TectonixChart({ points, tool, branch }: Props) {
               </summary>
               {tableOpen && (
               <div className="mt-3 overflow-x-auto rounded-lg border border-border">
-                <table className="w-full font-mono text-[0.68rem]">
+                <table className="w-full font-mono text-fluid-xs">
                   <thead>
                     <tr className="text-left text-muted">
                       <th className="px-3 py-2 font-normal">commit</th>
@@ -284,19 +284,19 @@ export default function TectonixChart({ points, tool, branch }: Props) {
             <p className="mt-2 font-sans text-[3.25rem] font-bold leading-none tracking-tight text-ink">
               {(latest.signal as number).toLocaleString()}
             </p>
-            <p className="mt-1 font-mono text-[0.62rem] text-muted">of 10,000</p>
+            <p className="mt-1 font-mono text-fluid-xs text-muted">of 10,000</p>
 
             <dl className="mt-6 space-y-3 font-mono text-fluid-xs">
               {dPrev !== null && (
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-muted">vs previous commit</dt>
-                  <dd className={dPrev >= 0 ? "text-secondary-dim" : "text-danger"}>{prevLabel}</dd>
+                  <dd className={dPrev >= 0 ? "text-secondary" : "text-danger"}>{prevLabel}</dd>
                 </div>
               )}
               {dFirst !== null && (
                 <div className="flex items-baseline justify-between gap-4">
                   <dt className="text-muted">vs first commit</dt>
-                  <dd className={dFirst >= 0 ? "text-secondary-dim" : "text-danger"}>{firstLabel}</dd>
+                  <dd className={dFirst >= 0 ? "text-secondary" : "text-danger"}>{firstLabel}</dd>
                 </div>
               )}
               {latest.bottleneck && (
@@ -313,7 +313,7 @@ export default function TectonixChart({ points, tool, branch }: Props) {
               )}
             </dl>
 
-            <p className="mt-6 font-mono text-[0.6rem] leading-relaxed text-muted/70">
+            <p className="mt-6 font-mono text-fluid-xs leading-relaxed text-muted">
               {tool} · {points.length} commits · {branch}
             </p>
           </div>

@@ -38,7 +38,7 @@ export default function AboutSection() {
         </m.div>
 
         <m.div {...fade(0.1)}>
-          <p className="mb-4 font-mono text-fluid-xs text-muted/50 uppercase tracking-widest">Stack</p>
+          <p className="mb-4 font-mono text-fluid-xs text-muted uppercase tracking-widest">Stack</p>
           <div className="flex flex-wrap gap-x-5 gap-y-4">
             {stack.map((s) => (
               <div key={s.slug} className="flex flex-col items-center gap-1.5">
@@ -56,7 +56,7 @@ export default function AboutSection() {
                   decoding="async"
                   style={{ opacity: 0.7 }}
                 />
-                <span className="font-mono text-[0.58rem] text-muted/60">{s.label}</span>
+                <span className="font-mono text-fluid-xs text-muted">{s.label}</span>
               </div>
             ))}
           </div>

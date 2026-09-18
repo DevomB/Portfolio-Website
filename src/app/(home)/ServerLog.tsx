@@ -74,7 +74,7 @@ export default function ServerLog() {
     >
       {/* window chrome: file name reads from the left edge, lights on the right */}
       <div className="flex items-center border-b border-accent/20 bg-surface px-4 py-2.5">
-        <span className="text-[0.6rem] font-medium text-ink">server.log</span>
+        <span className="font-medium text-ink">server.log</span>
         <span className="ml-auto flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-danger" />
           <span className="h-2.5 w-2.5 rounded-full bg-warn" />

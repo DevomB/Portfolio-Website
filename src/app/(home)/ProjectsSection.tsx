@@ -20,11 +20,7 @@ export default function ProjectsSection() {
               href={`/projects/${p.slug}`}
               className="group flex gap-5 py-7 transition-opacity hover:opacity-70"
             >
-              <span
-                className="shrink-0 font-mono tabular-nums select-none pt-px"
-                style={{ fontSize: "0.65rem", color: "var(--color-accent)", opacity: 0.55, minWidth: "2ch" }}
-                aria-hidden
-              >
+              <span className="min-w-[2ch] shrink-0 select-none pt-px font-mono text-fluid-xs tabular-nums text-accent-dim" aria-hidden>
                 {String(i + 1).padStart(2, "0")}
               </span>
               <div className="flex-1 min-w-0">
@@ -38,7 +34,7 @@ export default function ProjectsSection() {
                   )}
                 </div>
                 <p className="mt-1 text-fluid-sm leading-relaxed text-muted">{p.tagline}</p>
-                <p className="mt-2.5 font-mono text-fluid-xs text-muted/60">
+                <p className="mt-2.5 font-mono text-fluid-xs text-muted">
                   {p.techStack.slice(0, 4).join(" · ")}{p.techStack.length > 4 ? ` · +${p.techStack.length - 4}` : ""}
                 </p>
               </div>
