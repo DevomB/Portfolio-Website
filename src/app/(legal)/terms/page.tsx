@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/app/(chrome)/pageMetadata";
 import type { ReactNode } from "react";
 import LegalPage, {
   LegalLink,
@@ -6,11 +7,12 @@ import LegalPage, {
   LegalSummary,
 } from "@/app/(legal)/LegalPage";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Terms of Use",
   description:
     "Plain-language terms for devomb.com: a personal portfolio provided as-is. Demos are illustrative and nothing here is financial advice.",
-};
+  path: "/terms",
+});
 
 /* The terms are content, not component logic: each section is a heading and
    its prose, and the page just lays them out in order. */

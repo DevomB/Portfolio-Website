@@ -10,6 +10,7 @@ import {
   Space_Grotesk,
 } from "next/font/google";
 import MotionProvider from "@/app/(chrome)/MotionProvider";
+import { SITE_NAME, SITE_TITLE, SITE_URL } from "@/lib/site";
 
 /* The type system, one family per role. Decided in the font lab, 2026-09-03.
    Roles are exposed to Tailwind as font-sans / font-display / font-title /
@@ -56,32 +57,28 @@ const anybody = Anybody({
 });
 
 /* metadataBase is what turns the opengraph-image / twitter-image / apple-icon
-   file conventions into absolute URLs in the <head>. Without it, previews on
-   iMessage, LinkedIn, and X get a relative path and render a blank card. */
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://devomb.com";
+   file conventions — and every page's canonical path — into absolute URLs in
+   the <head>. Without it, previews on iMessage, LinkedIn, and X get a relative
+   path and render a blank card.
 
-/* One title shared by <head>, Open Graph, and Twitter, in step with the hero.
-   Deliberately no description: Next falls og:/twitter:description back to the
-   top-level one, and the link-preview card is the mark, the name, and the
-   tagline — nothing else. */
-const TITLE = "Devom Brahmbhatt — Trader · Engineer · Researcher";
-
+   The default title is the hero's line; a page's own title is templated
+   under the name. Each page sets its description, canonical URL and preview
+   fields through pageMetadata() in (chrome); these are the fallbacks. */
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Devom B",
-    template: "%s · Devom B",
+    default: SITE_TITLE,
+    template: `%s · ${SITE_NAME}`,
   },
   openGraph: {
-    title: TITLE,
+    title: SITE_TITLE,
     type: "website",
     locale: "en_US",
-    url: "/",
     siteName: "devomb.com",
   },
   twitter: {
     card: "summary_large_image",
-    title: TITLE,
+    title: SITE_TITLE,
   },
 };
 

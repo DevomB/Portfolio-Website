@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/app/(chrome)/pageMetadata";
 import DemoPage, { LedeLink } from "@/app/(chrome)/DemoPage";
 import PokerLab from "@/app/(poker)/PokerLab";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Poker Equity Calculator",
   description:
     "Live Monte Carlo poker equity simulation powered by the poker-calculations C++ engine.",
-};
+  path: "/poker-lab",
+});
 
 export default function PokerLabPage() {
   return (

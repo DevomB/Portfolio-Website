@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/app/(chrome)/pageMetadata";
 import DemoPage, { LedeLink } from "@/app/(chrome)/DemoPage";
 import Counterexample from "@/app/(ananke)/Counterexample";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Counterexample",
   description:
     "Ananke, running in your browser, records a payment workflow until an invariant breaks, replays it deterministically, shrinks the failing scenario to a minimal repro, and forks a different future from the step before.",
-};
+  path: "/counterexample",
+});
 
 export default function CounterexamplePage() {
   return (

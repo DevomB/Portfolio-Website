@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/app/(chrome)/pageMetadata";
 import DemoPage, { LedeLink } from "@/app/(chrome)/DemoPage";
 import Mirage from "@/app/(pallas)/Mirage";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "The Mirage",
   description:
     "A backtest-overfitting experiment: Athena's Pallas sweeps a parameter grid in your browser, three procedures pick a strategy, and a held-out year says which one was a mirage.",
-};
+  path: "/mirage",
+});
 
 export default function MiragePage() {
   return (

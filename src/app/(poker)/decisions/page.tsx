@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/app/(chrome)/pageMetadata";
 import DemoPage, { LedeLink } from "@/app/(chrome)/DemoPage";
 import RiverDecisions from "@/app/(poker)/RiverDecisions";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Geometry of Decisions",
   description:
     "A river decision surface over all 169 hands: paint what you believe about your opponent, and watch fold, call and raise trade places. Every value can be checked by hand.",
-};
+  path: "/decisions",
+});
 
 export default function DecisionsPage() {
   return (

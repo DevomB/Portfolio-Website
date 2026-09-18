@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/app/(chrome)/pageMetadata";
 import DemoPage, { LedeLink } from "@/app/(chrome)/DemoPage";
 import AdversarialTape from "@/app/(pallas)/AdversarialTape";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Adversarial Tape",
   description:
     "Athena's Pallas, running in your browser, hunts for the price path that makes a strategy lose the most — endpoints pinned, so it can only reorder time.",
-};
+  path: "/adversarial",
+});
 
 export default function AdversarialPage() {
   return (

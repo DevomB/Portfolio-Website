@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/app/(chrome)/pageMetadata";
 import DemoPage, { LedeLink } from "@/app/(chrome)/DemoPage";
 import Landscape from "@/app/(poker)/Landscape";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "The Landscape",
   description:
     "All 169 starting hands as a terrain — height is equity against the range you paint, computed live by the poker-calculations engine, exact on the river. Deal a board and watch it deform.",
-};
+  path: "/landscape",
+});
 
 export default function LandscapePage() {
   return (

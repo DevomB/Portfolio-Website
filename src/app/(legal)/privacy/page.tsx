@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/app/(chrome)/pageMetadata";
 import type { ReactNode } from "react";
 import LegalPage, {
   LegalLink,
@@ -6,11 +7,12 @@ import LegalPage, {
   LegalSummary,
 } from "@/app/(legal)/LegalPage";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Privacy Policy",
   description:
     "How devomb.com handles visitor data: no accounts, no cookies, no database, nothing you type is stored.",
-};
+  path: "/privacy",
+});
 
 const Mono = ({ children }: { children: ReactNode }) => (
   <span className="font-mono text-fluid-sm text-ink">{children}</span>

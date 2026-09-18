@@ -5,6 +5,7 @@ import { projects, getProject, type Project } from "@/app/(home)/projects";
 import Navbar from "@/app/(chrome)/Navbar";
 import Footer from "@/app/(chrome)/Footer";
 import { ButtonLink } from "@/app/(chrome)/Button";
+import { pageMetadata } from "@/app/(chrome)/pageMetadata";
 import CopyButton from "@/app/(home)/CopyButton";
 
 export function generateStaticParams() {
@@ -36,10 +37,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const project = getProject(slug);
   if (!project) return {};
-  return {
-    title: project.name,
-    description: project.tagline,
-  };
+  return pageMetadata({ title: project.name, description: project.tagline, path: `/projects/${project.slug}` });
 }
 
 export default async function ProjectPage({
