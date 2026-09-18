@@ -69,9 +69,9 @@ spacing:
 components:
   button-primary:
     backgroundColor: "{colors.accent}"
-    textColor: "{colors.ink}"
+    textColor: "#ffffff"
     rounded: "{rounded.button}"
-    padding: "0.625rem 1.25rem"
+    padding: "0.5rem 1rem"
   button-primary-hover:
     backgroundColor: "{colors.accent-dim}"
   button-ghost:
@@ -102,8 +102,8 @@ The site is a poker table after dark: a black felt canvas, one purple light,
 one green signal, and cards as the only physical objects. It reads two ways
 at once. Anyone gets the surface — big name, clear rows, direct copy. A
 developer gets the substrate — `//` section labels set as code comments, a
-server log that types itself in on load, SQL ghost text in the hero, a fake
-shell for the 404, a splash that deals cards before the page appears.
+server log that types itself in on load, a fake shell for the 404, a splash
+that deals cards before the page appears, once a visit.
 
 Precision-document structure, not marketing-page structure: rows over card
 grids, hairline dividers over fills, type scale over decoration. The single
@@ -145,10 +145,12 @@ Exposed to Tailwind as `bg`, `surface`, `surface-elevated`, `border`, `ink`,
 - **border** purple at 28% — every divider and hairline.
 - **ink** `#f2eefa` — primary text. **muted** `#9a8fb0` — secondary text,
   dates, taglines, footer links.
-- **accent** `#7c00ff` — Royal Purple. The hero H1, the navbar dot, borders,
-  the primary button fill, project row indices.
-- **accent-dim** `#a35cff` — purple lifted for legibility as *text* on black:
-  the footer `DEVOM` wordmark, link hover, legal-page links.
+- **accent** `#7c00ff` — Royal Purple. Borders, the primary button fill, the
+  wordmark's `.` — and, as text, only at 24px and up, which in practice is the
+  hero H1 (it is 3.3:1 on black).
+- **accent-dim** `#a35cff` — purple lifted for legibility as *text* on black
+  (5.5:1): every purple word under 24px — links, project row indices, the
+  "live demo" tag, labels — and the footer `DEVOM` wordmark.
 - **secondary** `#09ff00` — Joker Green. The `//` section labels, the live
   dot in the navbar, the server log's `ready` line, the pip on the front
   card of the mark. Also doubles as `ok`.
@@ -167,15 +169,38 @@ variation steps purple or green toward black, or uses alpha over black.
 *labelled* — status dots, section identifiers, a successful log line, the pip.
 If green appears on a heading or purple on a status dot, it is wrong.
 
-**Alpha is a modifier.** Every solid token is defined by its RGB channels
-(`--color-muted-rgb: 154 143 176`) and mapped in Tailwind with
-`<alpha-value>`, so `text-muted/60`, `bg-bg/90`, and `border-accent/25`
-emit real CSS. The three tokens that are already translucent — `border`,
+**Alpha is a modifier — for surfaces, never for text.** Every solid token is
+defined by its RGB channels (`--color-muted-rgb: 154 143 176`) and mapped in
+Tailwind with `<alpha-value>`, so `bg-bg/90` and `border-accent/25` emit real
+CSS. Text never takes a modifier (see the text rules below). The three tokens that are already translucent — `border`,
 `accent-bg`, `secondary-bg` — are plain values and take no modifier. To
 change a colour, edit its `*-rgb` line in `globals.css`; the hex in the
 comment is documentation only. (Before 2026-09-04 the modifier silently
 emitted nothing; if an old screenshot looks brighter than the site, that
 is why.)
+
+### Text rules (R1–R3)
+Checked on every route by compositing each text colour, times every
+ancestor's opacity, over its real background stack.
+
+- **R1 — contrast.** All text is at least 4.5:1 against what is actually
+  behind it; 3:1 at 24px and up, or 18.66px bold. Exempt: the `.` in the
+  `DEVOMB.COM` wordmark, disabled controls, hover states.
+- **R2 — full-strength tokens.** Text wears `ink`, `muted`, `accent-dim`,
+  `secondary`, `danger`, `warn` or `ok` — never an alpha modifier
+  (`text-muted/70`) and never inside anything carrying `opacity-*` at rest.
+  `accent` is text only at 24px and up. On a dark surface a red suit is
+  `danger`; `--color-card-red` is for the white card faces.
+- **R3 — an 11px floor.** Nothing is smaller than `text-fluid-xs` (11px).
+  The one exception is the 13×13 hand matrix on the Landscape and Decisions,
+  whose labels floor at 9px (10px at `xl`, where its sidebar grows to 360px).
+  SVG charts draw at the width they are shown — `useWidth()` in `(chrome)`,
+  one unit to a pixel — so their labels are 11px on a phone as on a desk; a
+  label that cannot fit its cell at that size is left out, not shrunk.
+- Labels on computed fills (the Mirage heat map) are black or white by
+  `labelOn(oklchLuminance(...))` in `src/lib/color.ts`, which clears 4.5:1 on
+  either side of the tie. Playing cards keep a solid white face under their
+  sheen, so they are measured against white.
 
 ## 3. Typography
 
@@ -203,9 +228,9 @@ nothing else has. Geist Mono is the single monospace so every date, label,
 and code line matches; a sixth family was rejected on exactly this ground.
 
 ### Where the type actually lives
-Usage counts in the codebase: `text-fluid-xs` ≈ 69 uses, `text-fluid-sm`
-≈ 24, `text-fluid-4xl` = 5, and **none of the large sizes are on the home
-page**. The home page is a hero followed by rows of 13px semibold names,
+`text-fluid-xs` is by far the most used size — every label, chip, caption
+and demo control — then `text-fluid-sm`, and **none of the large sizes are on
+the home page**. The home page is a hero followed by rows of 13px semibold names,
 13px taglines, and 11px mono dates. Judge any typeface at 11–13px first.
 
 ### Hierarchy
@@ -227,10 +252,11 @@ page**. The home page is a hero followed by rows of 13px semibold names,
   job titles, project names.
 - **Body** — Plex Sans, `text-fluid-base` 400, leading 1.65, muted. Measure 62ch
   (`.prose-readable`). Legal pages are the longest prose on the site.
-- **Label / Mono** — Geist Mono at `text-fluid-xs`. Section identifiers
-  (`// experience`, in **secondary**), dates, chips, footer links, the
-  the navbar clock, terminal output, row indices. All numerals on
-  the site are mono with `tabular-nums` so columns align.
+- **Label / Mono** — Geist Mono at `text-fluid-xs`, the smallest size on
+  the site. Section identifiers (`// about`, in **secondary**), dates, chips,
+  footer links, the navbar clock, terminal output, row indices, every demo
+  control and caption. All numerals on the site are mono with
+  `tabular-nums` so columns align.
 
 ### Named rules
 **Mono = data.** Dates, stack items, code, terminal lines, indices, section
@@ -249,8 +275,9 @@ Purple strokes on near-black faces.
 
 - Source of truth: `src/app/icon.svg` (the favicon, 64-unit viewBox).
 - Same geometry as JSX in `src/app/mark.tsx`, used by
-  `apple-icon.tsx` (180², on a purple-black radial) and
-  `opengraph-image.tsx` / `twitter-image.tsx` (1200×630).
+  `apple-icon.tsx` (180², on a purple-black radial) and by `ogCard.tsx`, the
+  1200×630 link-preview card behind the root's and every project and demo
+  page's `opengraph-image` / `twitter-image`.
 - The splash deals a full deck; the fan is that deal frozen at its best frame.
 
 Do not redraw it per surface. Change `icon.svg` and `src/app/mark.tsx` together.
@@ -265,16 +292,18 @@ Flat by default on a black canvas, where depth comes cheaply from
   windowed objects. Not on rows, not on sections.
 - Linked rows fade to 70% opacity on hover. No lift, no fill, no scale.
 - Text links shift colour (muted → ink, or accent-dim → accent).
-- Buttons: primary fills accent and hovers to accent-dim; ghost hovers its
-  border to purple at 40% and tints with accent-bg.
+- Buttons: primary fills accent with white text and hovers to accent-dim —
+  never dark text on purple; ghost hovers its border to purple at 40% and
+  tints with accent-bg. Both come from `(chrome)/Button.tsx` (see §6).
 - `::selection` is purple at 40%.
 
 **Motion.** Framer Motion via `MotionProvider`. Sections fade in once on
-scroll (`viewport: { once: true }`). The loading screen plays once per hard
-load and is skipped on client-side navigation; its skip hint reads
-`CLICK TO SKIP` on pointer devices and `TAP TO SKIP` on touch, via a CSS
-media query. `prefers-reduced-motion` is honoured in `globals.css`. Nothing
-loops.
+scroll (`viewport: { once: true }`). The splash plays once a visit — on the
+first hard load of `/` in a browser session — and never on client-side
+navigation, even to `/`; `?hand=` previews force it (see §6). Its skip hint
+reads `CLICK TO SKIP` on pointer devices and `TAP TO SKIP` on touch, via a
+CSS media query. `prefers-reduced-motion` is honoured in `globals.css`.
+Nothing loops.
 
 ## 6. Components
 
@@ -286,7 +315,8 @@ API routes, and the engine (`poker.ts`); `(pallas)` holds the Mirage and the
 Adversarial Tape with their worker, worlds and tapes; `(ananke)` holds the
 Counterexample; `(legal)` holds both policies and their shell; `(chrome)`
 holds what every route shares (Navbar, Footer, IntentLink, MotionProvider,
-and DemoPage — the shell every demo page is built on); `src/lib` holds
+Button, the `useWidth` and `useMoreRight` hooks, `pageMetadata`, and DemoPage —
+the shell every demo page is built on, footer included); `src/lib` holds
 dependency-free helpers; the 404, the brand mark, and the metadata images sit
 at the app root. Route groups add no URL segment, so nothing public moved.
 Tectonix scores modularity on the first three path segments, and this layout
@@ -306,16 +336,18 @@ and the longest import chain stays at three. Helpers have one home each:
 90% with `backdrop-blur-xl` and a purple 25% bottom border. Left: the
 wordmark `DEVOMB.COM` in Anybody 800 at 125% width (`font-wordmark`),
 `text-fluid-sm`, all caps, the `.` in accent — the footer wordmark at reading
-size, so the header and footer read as one object. Centre:
-About / Experience / Projects. Right: a live clock with a green dot
-(`tabular-nums`), and a GitHub pill. Mobile: hamburger opens a drawer on `bg`.
+size, so the header and footer read as one object. Centre: About and
+Projects, linked as `/#about` and `/#projects` so they work from every page
+(on home they smooth-scroll). Right: Devom's clock — `Eastvale · 1:05 AM PT`,
+America/Los_Angeles to the minute, re-rendered on the minute and never on the
+server — with its green dot, in tabular mono; and a GitHub pill. Mobile: a
+hamburger opens a drawer on `bg` with About, Projects, GitHub and the clock.
 
 **Hero.** One viewport tall (`.hero-fold`), vertically centred on the
-viewport. Name line in `text-2xl` semibold ink, then the H1 in accent, a
-38ch muted paragraph, primary + ghost buttons. On `lg` a 400px right column
-holds the server log. Behind everything: three soft purple `rounded-full`
-glows and `.sql-ghost` statements in Geist Mono at 14% purple, rotated a
-degree or two, `pointer-events: none`.
+viewport. Name line in `text-2xl` semibold ink, then the H1 in accent, the
+intro line in muted at a 38ch measure (two lines at most; it names the work,
+not the location), then a primary and a ghost button. On `lg` a 400px right
+column holds the server log. Nothing behind it: black.
 
 **Server log.** `rounded-xl`, purple 25% border, `surface` background, Geist
 Mono at `text-fluid-xs`. Chrome strip with the filename left and three
@@ -329,34 +361,74 @@ secondary, `tracking-wide`, `mb-10`. Every home section starts with one.
 **List row.** The home page's primary container. Hairline top divider, a
 mono gutter (index or year, `tabular-nums`), a `text-fluid-sm` semibold
 title, a muted tagline, optional chips. `py-5` to `py-7`. Linked rows fade
-on hover. Never a card.
+on hover. Never a card. The whole row is the link, so its "live demo" is a
+tag in accent-dim, not a second link, and carries no arrow.
 
 **Side quests.** The one place cards are allowed, because these are
 objects, not rows: two `.card-soft` cards after Projects, each a 16:9
 screenshot over a name, a one-line blurb in the repo's own voice, and a
-`site ↗` link out. Below them, `also built —` in mono: names and links
-only. Data in `src/app/(home)/sideQuests.ts`. Nothing here is a demo or gets a
-project page.
+`site ↗` link out. Data in `src/app/(home)/sideQuests.ts`. Nothing here is a
+demo or gets a project page.
 
 **Chips.** `.chip-soft` (surface, border, ink) for stack items; `.chip-accent`
 (accent-bg, accent-dim) for status like `live`. Mono, `text-fluid-xs`.
 
-**Footer.** Top hairline in purple 22%. A centred row of mono links —
-GitHub · LinkedIn · NPM · Crates · Privacy · Terms — with 2.5rem gaps, then
-`© 2026 Devom Brahmbhatt` at 60% opacity, then the `DEVOM` wordmark. No
-status widgets, no timestamp.
+**Footer.** On every page, the demos included. Top hairline in purple 22%.
+A centred row of mono links — GitHub · LinkedIn · NPM · Crates (the
+`PROFILES` in `src/lib/site.ts`, which the home page's JSON-LD reads too) ·
+Privacy · Terms — with 2.5rem gaps, then `© 2026 Devom Brahmbhatt` in muted,
+then the `DEVOM` wordmark. No status widgets, no timestamp.
 
 **Legal pages.** `/privacy` and `/terms` share `src/app/(legal)/LegalPage.tsx`: back link,
 page title, lede, "last updated", a `.card-soft` short-version box, then
-hairline-separated sections at 62ch. Links underline in accent.
+hairline-separated sections at 62ch. Links are accent-dim, underlined in purple.
 
 **404.** A terminal window: chrome strip, then `> GET <path>` with the real
 missed path read in the browser, the error line in danger, and a
 `Did you mean: <route> ?` computed by `src/app/suggestRoute.ts` against the
 live route list (falls back to `/` when nothing is close). One button: Go home.
 
-**Splash.** Full-screen deal animation on hard load, cards on the black
-felt, `CLICK/TAP TO SKIP` bottom-centre in mono at 0.58rem, 0.16em tracking.
+**Splash.** Full-screen deal animation, cards on the black felt, once a
+visit. `PageWrapper` decides it from three signals: the navigation entry
+(this document was loaded at `/` — landing inside and clicking home never
+plays it), module scope (not yet played in this JS context), and
+sessionStorage (not yet played this session, so a reload of `/` goes straight
+to the page; if storage throws, it plays). `?hand=` always plays. The
+composition is a 680px box scaled to fit; below a scale of 1 the subtitle and
+the hand label leave the ring and sit just under its lowest card at
+`text-fluid-xs`, same colours, tracking and timing, while the name stays in
+the ring. The hand label is ink, green for a pair or better, glowing for a
+full house or better. `CLICK/TAP TO SKIP` sits bottom-centre in mono at
+`text-fluid-xs` in muted, 0.16em tracking.
+
+**Buttons.** `Button` and `ButtonLink` in `(chrome)/Button.tsx`, primary or
+ghost, `md` or `sm`: the only way the site draws one. `ButtonLink` opens an
+absolute URL in a new tab and prefetches an internal route the Next way, or
+on intent (`prefetch="intent"`, through IntentLink) for the heavy ones.
+
+**Arrows.** `↗` only on a link that leaves devomb.com in a new tab. An
+internal link gets `→` or nothing.
+
+**Project pages.** One call-to-action row, in one order: "Open live demo"
+(primary), the project's other demos (ghost), View source, then its registry
+— npm, crates.io or PyPI, each a ghost button with the same package icon.
+
+**Charts and tables in the demos.** The Pallas line chart draws its frame and
+a one-line empty state until a series has data, and `axisTicks()` never
+writes two gridlines the same way. A table too wide for a phone scrolls in
+its own box, never the page: its first column pinned (background clipped to
+the padding box so the row lines survive), and a right-edge fade from
+`useMoreRight()` while there is more to the right. Rank pickers show all
+thirteen ranks in a row or a deliberate 7 + 6, never a lone card.
+
+**Metadata and previews.** Every page builds its metadata with
+`pageMetadata()`: the title (the layout templates it as
+`%s · Devom Brahmbhatt`; the default is the hero's line), the description,
+the canonical URL, and the Open Graph and Twitter fields. Project and demo
+pages have their own preview card — `src/app/ogCard.tsx`, the root card's
+layout with the page's kicker and title — and home, privacy and terms use
+the root card. `src/app/sitemap.ts` lists every public page from the project
+data; `robots.ts` allows all and points at it.
 
 ## 7. Loading policy
 
@@ -367,16 +439,15 @@ intent. Ranked by how likely the next click is:
   on the home page, and the home link from inner pages. These are what people
   click, so their route payload is fetched as soon as the row scrolls in.
 - **Secondary and heavy paths prefetch on intent** via
-  src/app/(chrome)/IntentLink.tsx: the footer's Privacy and Terms, and the
-  "Open live demo" link to the card desk. Pointer-enter, keyboard focus, or
+  src/app/(chrome)/IntentLink.tsx: the footer's Privacy and Terms, and every
+  demo link on the project pages (`ButtonLink prefetch="intent"`). Pointer-enter, keyboard focus, or
   touch warms the route once; nothing is fetched for a visitor who only
   scrolls past. (In the App Router, prefetch={false} also disables hover
   prefetch, which is why intent is wired by hand.)
-- **Heavy interactives load on intent, not with their page.** PokerLab is a
-  dynamic import inside PokerLabModal, warmed when the trigger is hovered or
-  focused and rendered only when the modal opens. The project page no longer
-  ships the lab or framer-motion's domMax features to readers who never open
-  it. The card desk is its own route and loads only when visited.
+- **Heavy interactives load on intent, not with their page.** Every demo is
+  its own route, warmed when its link is hovered, focused or touched and
+  loaded only when visited; the project pages ship none of them, nor
+  framer-motion's domMax features (Poker Lab's own subtree loads those).
 - **Fonts preload only where they paint.** Space Grotesk (inner-page titles)
   is preload: false — it self-hosts and loads on first use with a
   metric-matched fallback, instead of costing every home visitor ~22KB for a
@@ -413,14 +484,17 @@ the numbers that justified each rule are in the commit messages.
 ### Do
 - **Do** edit colours only in the three `--brand-*` tokens. Everything else
   is derived.
-- **Do** use the `/opacity` modifier on solid tokens (`text-muted/60`,
-  `bg-bg/90`) and `opacity-*` only when the whole element should fade.
+- **Do** use the `/opacity` modifier on surfaces and borders (`bg-bg/90`,
+  `border-accent/25`). Text takes full-strength tokens only, and nothing that
+  holds resting text wears `opacity-*`.
+- **Do** draw every primary or ghost button with `Button` / `ButtonLink`.
 - **Do** keep purple for structure and green for signal.
 - **Do** put content in rows with hairlines, not in cards.
 - **Do** set every number in mono with `tabular-nums`.
 - **Do** use the fan mark from its two sources; never a per-surface redraw.
 - **Do** keep the loud gestures to two: the hero H1 and the footer wordmark.
-- **Do** judge type decisions at 11–13px, where the site actually lives.
+- **Do** judge type decisions at 11–13px, where the site actually lives —
+  and never go under 11px (the hand matrix's 9px labels are the exception).
 
 ### Don't
 - **Don't** hardcode hex values in components. Use `var(--color-*)` or the
@@ -433,6 +507,7 @@ the numbers that justified each rule are in the commit messages.
   scroll-jacking, no continuous movement. Load once, respond to hover/focus.
 - **Don't** build icon + heading + text card grids, side-stripe accents,
   gradient text, hero metrics, testimonial carousels, or gradient blobs.
+- **Don't** put dark text on purple, or `↗` on a link that stays on the site.
 - **Don't** give a section both a `//` label and a heading saying the same
   thing.
 - **Don't** describe the site as "dark mode". There is no light mode. Black
