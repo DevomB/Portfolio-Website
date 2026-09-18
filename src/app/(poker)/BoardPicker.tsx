@@ -9,6 +9,10 @@ import { MATRIX_RANKS } from "@/app/(poker)/handMatrix";
 export const SUIT_GLYPH: Record<string, string> = { s: "♠", h: "♥", d: "♦", c: "♣" };
 export const SUIT_RED = new Set(["h", "d"]);
 const ALL_CARDS = MATRIX_RANKS.split("").flatMap((r) => ["s", "h", "d", "c"].map((s) => r + s));
+const RANK_NAME: Record<string, string> = { A: "ace", K: "king", Q: "queen", J: "jack", T: "10" };
+const SUIT_NAME: Record<string, string> = { s: "spades", h: "hearts", d: "diamonds", c: "clubs" };
+/** "Kh" -> "king of hearts": what a screen reader says for a card button. */
+const cardName = (c: string) => `${RANK_NAME[c[0]!] ?? c[0]} of ${SUIT_NAME[c[1]!]}`;
 
 type Props = {
   board: string[];
@@ -54,17 +58,21 @@ export default function BoardPicker({ board, onChange, variant }: Props) {
         </div>
       </div>
       <div className="mt-3 flex gap-1.5 min-h-[3.2rem]">
-        {Array.from({ length: 5 }, (_, i) => board[i]).map((c, i) => (
+        {/* a dealt card is a button that takes it back; an open slot is only a placeholder */}
+        {Array.from({ length: 5 }, (_, i) => board[i]).map((c, i) => c ? (
           <button
             key={i}
             type="button"
-            onClick={() => c && onChange(board.filter((x) => x !== c))}
-            title={c ? "remove" : undefined}
-            className={`h-12 w-9 rounded-md border font-mono text-sm font-bold ${c ? "border-card-edge bg-white" : "border-dashed border-accent/20 bg-accent/5"}`}
-            style={{ color: c && SUIT_RED.has(c[1]!) ? "var(--color-card-red)" : "var(--color-card-black)" }}
+            onClick={() => onChange(board.filter((x) => x !== c))}
+            title="remove"
+            aria-label={`remove ${cardName(c)}`}
+            className="h-12 w-9 rounded-md border border-card-edge bg-white font-mono text-sm font-bold"
+            style={{ color: SUIT_RED.has(c[1]!) ? "var(--color-card-red)" : "var(--color-card-black)" }}
           >
-            {c ? <>{c[0] === "T" ? "10" : c[0]}<span className="block text-[0.7rem] leading-none">{SUIT_GLYPH[c[1]!]}</span></> : null}
+            {c[0] === "T" ? "10" : c[0]}<span className="block text-[0.7rem] leading-none">{SUIT_GLYPH[c[1]!]}</span>
           </button>
+        ) : (
+          <span key={i} aria-hidden className="h-12 w-9 rounded-md border border-dashed border-accent/20 bg-accent/5" />
         ))}
       </div>
       {hint && <p className="mt-2 font-mono text-[0.6rem] text-muted">{hint}</p>}
@@ -77,7 +85,7 @@ export default function BoardPicker({ board, onChange, variant }: Props) {
               {MATRIX_RANKS.split("").map((r) => {
                 const c = r + s; const used = inBoard(c);
                 return (
-                  <button key={c} type="button" onClick={() => deal(c)} disabled={used || n >= 5}
+                  <button key={c} type="button" onClick={() => deal(c)} disabled={used || n >= 5} aria-label={cardName(c)}
                           className={`h-5 min-w-0 rounded-sm font-mono text-[0.6rem] transition-colors ${used ? "bg-accent/30 text-ink/40" : "bg-surface-elevated text-muted hover:text-ink hover:bg-accent-bg"} disabled:cursor-default`}>
                     {r}
                   </button>
