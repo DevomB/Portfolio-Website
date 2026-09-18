@@ -8,6 +8,7 @@ export const metadata: Metadata = pageMetadata({
   description:
     "A river decision surface over all 169 hands: paint what you believe about your opponent, and watch fold, call and raise trade places. Every value can be checked by hand.",
   path: "/decisions",
+  ownCard: true,
 });
 
 export default function DecisionsPage() {

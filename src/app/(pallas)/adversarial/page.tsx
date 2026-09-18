@@ -8,6 +8,7 @@ export const metadata: Metadata = pageMetadata({
   description:
     "Athena's Pallas, running in your browser, hunts for the price path that makes a strategy lose the most — endpoints pinned, so it can only reorder time.",
   path: "/adversarial",
+  ownCard: true,
 });
 
 export default function AdversarialPage() {

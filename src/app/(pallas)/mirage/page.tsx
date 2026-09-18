@@ -8,6 +8,7 @@ export const metadata: Metadata = pageMetadata({
   description:
     "A backtest-overfitting experiment: Athena's Pallas sweeps a parameter grid in your browser, three procedures pick a strategy, and a held-out year says which one was a mirage.",
   path: "/mirage",
+  ownCard: true,
 });
 
 export default function MiragePage() {

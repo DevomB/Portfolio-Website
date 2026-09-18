@@ -8,6 +8,7 @@ export const metadata: Metadata = pageMetadata({
   description:
     "Ananke, running in your browser, records a payment workflow until an invariant breaks, replays it deterministically, shrinks the failing scenario to a minimal repro, and forks a different future from the step before.",
   path: "/counterexample",
+  ownCard: true,
 });
 
 export default function CounterexamplePage() {

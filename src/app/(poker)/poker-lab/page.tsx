@@ -8,6 +8,7 @@ export const metadata: Metadata = pageMetadata({
   description:
     "Live Monte Carlo poker equity simulation powered by the poker-calculations C++ engine.",
   path: "/poker-lab",
+  ownCard: true,
 });
 
 export default function PokerLabPage() {

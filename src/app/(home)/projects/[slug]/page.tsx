@@ -37,7 +37,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const project = getProject(slug);
   if (!project) return {};
-  return pageMetadata({ title: project.name, description: project.tagline, path: `/projects/${project.slug}` });
+  return pageMetadata({ title: project.name, description: project.tagline, path: `/projects/${project.slug}`, ownCard: true });
 }
 
 export default async function ProjectPage({

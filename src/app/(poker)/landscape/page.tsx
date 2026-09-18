@@ -8,6 +8,7 @@ export const metadata: Metadata = pageMetadata({
   description:
     "All 169 starting hands as a terrain — height is equity against the range you paint, computed live by the poker-calculations engine, exact on the river. Deal a board and watch it deform.",
   path: "/landscape",
+  ownCard: true,
 });
 
 export default function LandscapePage() {

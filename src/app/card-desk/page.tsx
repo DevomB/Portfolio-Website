@@ -8,6 +8,7 @@ export const metadata: Metadata = pageMetadata({
   description:
     "Options on the sum of drawn cards — theo and Greeks re-priced live by the cardquant Python package.",
   path: "/card-desk",
+  ownCard: true,
 });
 
 export default function CardDeskPage() {
