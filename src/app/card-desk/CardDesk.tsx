@@ -140,7 +140,9 @@ export default function CardDesk() {
             <p className="font-mono text-fluid-xs text-secondary tracking-wide">{"// draw a card"}</p>
             <p className="font-mono text-fluid-xs text-muted">{expired ? "expired — all cards drawn" : `${n - seen.length} more to draw`}</p>
           </div>
-          <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(3.25rem, 1fr))" }}>
+          {/* all thirteen ranks on one row, or A–7 over 8–K where a row of
+              thirteen would crush the labels — never a lone K */}
+          <div className="grid grid-cols-7 gap-1.5 sm:grid-cols-[repeat(13,minmax(0,1fr))] sm:gap-2">
             {RANKS.map((r) => {
               const left = remaining.get(r) ?? 0;
               const out = expired || left <= 0;
@@ -150,7 +152,7 @@ export default function CardDesk() {
                   type="button"
                   onClick={() => draw(r)}
                   disabled={out}
-                  className="group relative flex flex-col items-center justify-center rounded-lg border px-1 py-2.5 font-mono transition-all disabled:opacity-25 disabled:cursor-not-allowed hover:border-accent/50 hover:bg-accent-bg"
+                  className="group relative flex min-w-0 flex-col items-center justify-center rounded-lg border px-1 py-2.5 font-mono transition-all disabled:opacity-25 disabled:cursor-not-allowed hover:border-accent/50 hover:bg-accent-bg"
                   style={{ borderColor: "var(--color-border)", background: "var(--color-surface)" }}
                   aria-label={`draw ${rankLabel(r)}`}
                 >

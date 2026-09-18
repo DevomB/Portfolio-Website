@@ -68,17 +68,17 @@ export default function BoardPicker({ board, onChange, variant }: Props) {
         ))}
       </div>
       {hint && <p className="mt-2 font-mono text-[0.6rem] text-muted">{hint}</p>}
-      {/* picker */}
-      <div className="mt-3 grid grid-cols-[auto_1fr] gap-x-2 gap-y-1">
+      {/* picker: each suit's thirteen ranks share one row at every width */}
+      <div className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
         {(["s", "h", "d", "c"] as const).map((s) => (
           <div key={s} className="contents">
             <span className="font-mono text-[0.7rem]" style={{ color: SUIT_RED.has(s) ? "var(--color-card-red)" : "var(--color-ink)" }}>{SUIT_GLYPH[s]}</span>
-            <div className="flex flex-wrap gap-[3px]">
+            <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-[2px]">
               {MATRIX_RANKS.split("").map((r) => {
                 const c = r + s; const used = inBoard(c);
                 return (
                   <button key={c} type="button" onClick={() => deal(c)} disabled={used || n >= 5}
-                          className={`h-5 w-[1.15rem] rounded-sm font-mono text-[0.6rem] transition-colors ${used ? "bg-accent/30 text-ink/40" : "bg-surface-elevated text-muted hover:text-ink hover:bg-accent-bg"} disabled:cursor-default`}>
+                          className={`h-5 min-w-0 rounded-sm font-mono text-[0.6rem] transition-colors ${used ? "bg-accent/30 text-ink/40" : "bg-surface-elevated text-muted hover:text-ink hover:bg-accent-bg"} disabled:cursor-default`}>
                     {r}
                   </button>
                 );

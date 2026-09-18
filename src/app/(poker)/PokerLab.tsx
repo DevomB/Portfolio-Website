@@ -191,11 +191,12 @@ export default function PokerLab() {
             )}
           </div>
 
-          <div className="flex flex-wrap gap-1.5 mb-2">
+          {/* thirteen ranks on one row, or A–8 over 7–2 on a phone — never a lone 2 */}
+          <div className="mb-2 grid grid-cols-7 gap-1.5 sm:max-w-[34rem] sm:grid-cols-[repeat(13,minmax(0,1fr))]">
             {RANKS.map((r) => (
               <button key={r} type="button"
                 onClick={() => setPendingRank((p) => (p === r ? null : r))}
-                className="w-9 h-9 font-mono text-fluid-xs font-semibold rounded-md border transition-colors"
+                className="h-9 min-w-0 font-mono text-fluid-xs font-semibold rounded-md border transition-colors"
                 style={{
                   borderColor: pendingRank === r ? "var(--color-accent)" : "var(--color-border)",
                   background: pendingRank === r ? "var(--color-accent-bg)" : "var(--color-surface-elevated)",
