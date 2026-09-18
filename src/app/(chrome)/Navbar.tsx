@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 // Rooted at "/" so they work from every page; on home itself Next treats
 // them as a hash-only change and the page smooth-scrolls to the section.
@@ -10,45 +10,31 @@ const navLinks = [
   { label: "Projects", href: "/#projects" },
 ];
 
-function LiveClock() {
-  const [time, setTime] = useState("");
-  const [tzAbbr, setTzAbbr] = useState("");
+/* Devom's time, not the visitor's: Eastvale, to the minute. The snapshot is
+   the formatted minute, so React re-renders once a minute, on the minute —
+   and never on the server, where the time would be the build's. */
+const PT = new Intl.DateTimeFormat("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", minute: "2-digit" });
+const everyMinute = (onChange: () => void) => {
+  let t: ReturnType<typeof setTimeout>;
+  const arm = () => { t = setTimeout(() => { onChange(); arm(); }, 60_000 - (Date.now() % 60_000) + 20); };
+  arm();
+  return () => clearTimeout(t);
+};
+const ptNow = () => PT.format(Date.now());
+const noTimeOnServer = () => null;
 
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      const t = now.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false,
-      });
-      const abbr =
-        new Intl.DateTimeFormat("en-US", { timeZoneName: "short" })
-          .formatToParts(now)
-          .find((p) => p.type === "timeZoneName")?.value ?? "";
-      setTime(t);
-      setTzAbbr(abbr);
-    };
-
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
-  }, []);
-
+function LiveClock({ className }: { className: string }) {
+  const time = useSyncExternalStore(everyMinute, ptNow, noTimeOnServer);
   if (!time) return null;
 
   return (
-    <span className="hidden items-center gap-1.5 font-mono text-fluid-xs text-muted lg:flex">
+    <span className={`items-center gap-1.5 font-mono text-fluid-xs text-muted ${className}`}>
       <span
         className="inline-block h-1.5 w-1.5 rounded-full bg-secondary"
         style={{ boxShadow: "0 0 6px rgb(var(--brand-green-rgb) / 0.6)" }}
         aria-hidden
       />
-      <span className="tabular-nums">{time}</span>
-      {/* 1px spacer: time -> zone reads as one unit (6 + 1 + 6 = 13px) */}
-      <span className="inline-block w-px" aria-hidden />
-      <span>{tzAbbr}</span>
+      <span className="tabular-nums">Eastvale · {time} PT</span>
     </span>
   );
 }
@@ -103,7 +89,7 @@ export default function Navbar() {
 
         {/* right: clock + github */}
         <div className="hidden items-center gap-4 md:flex">
-          <LiveClock />
+          <LiveClock className="hidden lg:flex" />
           <Link
             href="https://github.com/DevomB"
             target="_blank"
@@ -157,7 +143,7 @@ export default function Navbar() {
                 </Link>
               ))}
               <div className="mt-2 border-t border-border pt-3 px-3">
-                <LiveClock />
+                <LiveClock className="flex" />
               </div>
             </nav>
           </div>
