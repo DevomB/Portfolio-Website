@@ -85,8 +85,8 @@ export default function HeroSection() {
             className="mb-10 leading-relaxed"
             style={{ fontSize: "var(--text-base)", color: "var(--color-muted)", maxWidth: "38ch" }}
           >
-            Building resilient APIs, data-intensive systems, and applied simulations.
-            Based in Eastvale, CA.
+            Trading and backtesting engines, pricing and poker math, and
+            deterministic runtimes.
           </m.p>
 
           <m.div {...fade(0.3)} className="flex items-center gap-3">
