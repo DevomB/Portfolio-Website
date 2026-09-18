@@ -49,6 +49,8 @@ export default function CardDesk() {
   const [result, setResult] = useState<{ key: string; quote: Quote; wire: { ms: number; cached: boolean } } | null>(null);
   const [failure, setFailure] = useState<{ key: string; message: string } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const boardScroll = useRef<HTMLDivElement>(null);
+  const [moreRight, setMoreRight] = useState(false);
 
   const quote = result?.quote ?? null;
   const wire = result?.wire ?? null;
@@ -95,6 +97,18 @@ export default function CardDesk() {
       });
     return () => ac.abort();
   }, [key, n, seen, strikes, replacement]);
+
+  // is there more of the board to the right of what is showing?
+  useEffect(() => {
+    const el = boardScroll.current;
+    if (!el) return;
+    const check = () => setMoreRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    el.addEventListener("scroll", check, { passive: true });
+    return () => { ro.disconnect(); el.removeEventListener("scroll", check); };
+  }, []);
 
   const draw = (r: number) => {
     if (expired || (remaining.get(r) ?? 0) <= 0) return;
@@ -158,7 +172,7 @@ export default function CardDesk() {
                   aria-label={`draw ${rankLabel(r)}`}
                 >
                   <span className="text-fluid-base font-semibold text-ink">{rankLabel(r)}</span>
-                  <span className="text-[0.6rem] text-muted">{replacement ? "∞" : `×${left}`}</span>
+                  <span className="text-fluid-xs text-muted">{replacement ? "∞" : `×${left}`}</span>
                 </button>
               );
             })}
@@ -195,7 +209,7 @@ export default function CardDesk() {
                   }}
                 >
                   {rankLabel(r)}
-                  <span className="absolute bottom-1 right-1.5 text-[0.55rem] font-normal opacity-50">{r}</span>
+                  <span className="absolute bottom-0.5 right-1 text-fluid-xs font-normal">{r}</span>
                 </m.div>
               ))}
             </AnimatePresence>
@@ -205,9 +219,9 @@ export default function CardDesk() {
 
         {/* the board */}
         <div className="card-soft overflow-hidden">
-          <div className="flex items-center justify-between border-b px-5 py-3" style={{ borderColor: "var(--color-border)" }}>
-            <p className="font-mono text-fluid-xs text-secondary tracking-wide">{"// board"}</p>
-            <p className="font-mono text-[0.62rem] text-muted">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b px-5 py-3" style={{ borderColor: "var(--color-border)" }}>
+            <p className="shrink-0 whitespace-nowrap font-mono text-fluid-xs text-secondary tracking-wide">{"// board"}</p>
+            <p className="font-mono text-fluid-xs text-muted">
               {error ? <span className="text-danger">{error}</span> : pending ? "pricing…" : quote ? (
                 <>
                   {quote.meta.library} · {quote.meta.runtime} · {quote.meta.ms.toFixed(0)} ms compute
@@ -216,11 +230,14 @@ export default function CardDesk() {
               ) : null}
             </p>
           </div>
-          <div className="overflow-x-auto">
+          {/* on a phone the Greeks scroll sideways under a pinned strike
+              column, and a fade on the right edge says there is more */}
+          <div className="relative">
+          <div ref={boardScroll} className="overflow-x-auto">
             <table className="w-full font-mono text-fluid-xs tabular-nums" style={{ opacity: pending ? 0.55 : 1, transition: "opacity 160ms" }}>
               <thead>
                 <tr className="text-muted" style={{ borderBottom: "1px solid var(--color-border)" }}>
-                  <th className="px-4 py-2.5 text-left font-normal">K</th>
+                  <th className="sticky left-0 z-[1] bg-surface-elevated px-4 py-2.5 text-left font-normal">K</th>
                   <th className="px-2 py-2.5 text-left font-normal text-secondary" colSpan={6}>call · theo Δ Γ Θ ψ χ</th>
                   <th className="px-2 py-2.5 text-left font-normal text-accent-dim" colSpan={6}>put · theo Δ Γ Θ ψ χ</th>
                 </tr>
@@ -230,7 +247,7 @@ export default function CardDesk() {
                   const callItm = future !== null && future > row.strike;
                   return (
                     <tr key={row.strike} style={{ borderBottom: "1px solid rgb(var(--brand-purple-rgb) / 0.12)" }}>
-                      <td className="px-4 py-2.5 font-semibold text-ink">{row.strike}</td>
+                      <td className="sticky left-0 z-[1] bg-surface-elevated px-4 py-2.5 font-semibold text-ink">{row.strike}</td>
                       <GreekCells g={row.call} itm={callItm} tone="secondary" />
                       <GreekCells g={row.put} itm={future !== null && future < row.strike} tone="accent" />
                     </tr>
@@ -238,6 +255,8 @@ export default function CardDesk() {
                 })}
               </tbody>
             </table>
+          </div>
+          {moreRight && <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-surface-elevated" />}
           </div>
         </div>
       </div>
@@ -259,8 +278,8 @@ export default function CardDesk() {
             <span className="font-mono text-fluid-xs text-muted">strikes</span>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {strikes.map((k) => (
-                <button key={k} type="button" onClick={() => removeStrike(k)} className="chip-accent px-2.5 py-1 font-mono text-fluid-xs transition-opacity hover:opacity-70" title="remove">
-                  {k} <span className="opacity-60">×</span>
+                <button key={k} type="button" onClick={() => removeStrike(k)} className="chip-accent px-2.5 py-1 font-mono text-fluid-xs transition-opacity hover:opacity-70" title="remove" aria-label={`remove strike ${k}`}>
+                  {k} <span aria-hidden>×</span>
                 </button>
               ))}
             </div>
@@ -288,7 +307,7 @@ export default function CardDesk() {
           <p><span className="text-ink font-semibold">The game.</span> Draw <span className="font-mono text-ink">{n}</span> cards (A = 1 … K = 13). Calls and puts settle on the final sum against each strike.</p>
           <p><span className="text-ink font-semibold">Δ</span> is the probability of finishing in the money. <span className="text-ink font-semibold">Γ</span> is how fast Δ moves across one strike.</p>
           <p><span className="text-ink font-semibold">Θ ψ χ</span> are the time Greeks — and here time is <em>the next card</em>: how theo, Δ and Γ change when the expected card is drawn.</p>
-          <p className="text-fluid-xs">Priced exactly by enumeration in the published <a href="https://pypi.org/project/cardquant/" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-dim">cardquant</a> package — real CPython, nothing ported.</p>
+          <p className="text-fluid-xs">Priced exactly by enumeration in the published <a href="https://pypi.org/project/cardquant/" target="_blank" rel="noopener noreferrer" className="text-accent-dim transition-colors hover:text-ink">cardquant</a> package — real CPython, nothing ported.</p>
         </div>
       </div>
     </div>
@@ -300,7 +319,7 @@ const EMPTY: Greeks = { theo: null, delta: null, gamma: null, theta: null, charm
 function Stat({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return (
     <div>
-      <p className="font-mono text-[0.62rem] tracking-wide text-muted uppercase">{label}</p>
+      <p className="font-mono text-fluid-xs tracking-wide text-muted uppercase">{label}</p>
       <p className="mt-1 font-mono text-fluid-3xl font-bold tabular-nums" style={{ color: accent ? "var(--color-secondary)" : "var(--color-ink)" }}>{value}</p>
     </div>
   );
