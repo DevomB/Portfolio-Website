@@ -49,7 +49,7 @@ function score(path: string, candidate: string): number {
   const pLast = lastSegment(p);
   const cLast = lastSegment(c);
 
-  // "terms-of-service" → "terms", "poker" → "poker-bot": one segment
+  // "terms-of-service" → "terms", "poker" → "poker-calculations": one segment
   // contains the other. Require 3+ chars so "a" doesn't match everything.
   const contains =
     pLast.length >= 3 &&

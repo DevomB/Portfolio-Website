@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function PokerLabPage() {
   return (
     <DemoPage
-      back="/projects/poker-bot"
+      back="/projects/poker-calculations"
       kicker="poker-lab"
       title="Poker Equity Calculator"
       wide={false}

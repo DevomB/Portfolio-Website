@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function DecisionsPage() {
   return (
     <DemoPage
-      back="/projects/poker-bot"
+      back="/projects/poker-calculations"
       kicker="decisions"
       title="Geometry of Decisions"
       lede={

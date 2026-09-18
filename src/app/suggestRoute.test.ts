@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { suggestRoute } from "@/app/suggestRoute";
 
-const routes = ["/", "/privacy", "/terms", "/poker-lab", "/projects/poker-bot", "/projects/ananke", "/card-desk"];
+const routes = ["/", "/privacy", "/terms", "/poker-lab", "/projects/poker-calculations", "/projects/ananke", "/card-desk"];
 
 describe("suggestRoute", () => {
   it("reads a typo or a longer name as the route it resembles", () => {

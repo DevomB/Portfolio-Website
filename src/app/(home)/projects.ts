@@ -25,12 +25,12 @@ export type Project = {
 
 export const projects: Project[] = [
   {
-    slug: "poker-bot",
-    name: "Poker-Bot",
-    tagline: "NL Hold'em equity engine in C++20 with Monte Carlo simulation.",
+    slug: "poker-calculations",
+    name: "Poker Calculations",
+    tagline: "NL Hold'em toolkit for Node.js on a C++20 core — hands, equity, pot and chip math, ICM.",
     description:
-      "A from-scratch C++20 No-Limit Texas Hold'em engine covering the full dealing pipeline, betting phases, hand evaluation, and parallel Monte Carlo equity simulation. Built as an algorithms and systems playground — the same engine powers the PokerLab demo on this site via the poker-calculations npm package.",
-    techStack: ["C++20", "CMake", "GoogleTest", "Node.js", "N-API"],
+      "An npm package for no-limit Hold'em math: hand evaluation, Monte Carlo and exact equity, pot odds and chip EV, ICM and side pots, draw probabilities, fold equity and GTO-style frequencies, and a rule-based decideAction layer over serialized table state. The core is C++20, exposed to Node through N-API with prebuilt binaries for Linux, macOS and Windows — npm install needs no compiler — and it ships full TypeScript types. The three poker demos on this site call the published package from their API routes.",
+    techStack: ["C++20", "CMake", "N-API", "Node.js", "npm"],
     githubUrl: "https://github.com/DevomB/Poker-Calculations",
     npmPackage: "poker-calculations",
     demoPath: "/poker-lab",
@@ -41,15 +41,15 @@ export const projects: Project[] = [
     readmeSections: [
       {
         title: "Architecture",
-        body: "The engine is split into independent modules: card representation (bit-packed ranks/suits), dealing (Fisher-Yates shuffle over a 52-card deck), a phase state machine (pre-flop → flop → turn → river → showdown), hand evaluation (two-plus-two lookup table variant), and a parallel Monte Carlo runner that spawns N threads and merges results.",
+        body: "The C++20 core is a set of small modules: cards as a rank byte and a suit byte, with packed 0–51 deck ids for hot paths; a deck shuffled by a seeded Mersenne Twister; a game state that walks pre-flop → flop → turn → river → showdown; a best-five hand evaluator that packs a hand's category and kickers into one comparable 64-bit strength; and the equity code on top of it — Monte Carlo, exact heads-up, and range against range. The N-API layer exposes it all to Node, synchronously or on the libuv thread pool with optional cancellation.",
       },
       {
         title: "How the equity simulation works",
-        body: "Given hero hole cards and an optional partial board, the runner deals random villain hands and remaining community cards for a configurable number of iterations. Win/tie/loss counts are accumulated with atomic integers for thread safety, then converted to percentages. The poker-calculations npm package wraps this engine via N-API so it can run inside a Next.js API route.",
+        body: "Given hero hole cards and an optional partial board, each iteration shuffles the cards still in the deck, deals the villains and the rest of the board, and scores the showdown; a tie splits the pot among the tied hands. The parallel runner splits the iterations into one chunk per thread, gives each chunk its own seeded generator, and averages the chunks' equities weighted by their size, so a seed reproduces its answer. The poker-calculations npm package wraps this engine via N-API so it can run inside a Next.js API route.",
       },
       {
-        title: "Testing",
-        body: "GoogleTest covers the dealing pipeline, hand evaluator edge cases, and equity output distribution. Known-good equity spots (AA vs KK pre-flop ≈ 82%) are used as regression anchors.",
+        title: "How it ships",
+        body: "Releases publish N-API prebuilds for Linux (glibc and musl), macOS and Windows, so installing the package never compiles C++. CI stages each binary and loads it exactly as an installed package does, exercising a few calls — on every prebuild, and again on the assembled package before it is published.",
       },
     ],
   },

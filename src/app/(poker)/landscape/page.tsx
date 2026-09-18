@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function LandscapePage() {
   return (
     <DemoPage
-      back="/projects/poker-bot"
+      back="/projects/poker-calculations"
       kicker="landscape"
       title="The Landscape"
       lede={
