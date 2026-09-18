@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { Button } from "@/app/(chrome)/Button";
+import { useMoreRight } from "@/app/(chrome)/useMoreRight";
 
 /* ── The Card Sum Options Desk ────────────────────────────────────────────────
    IMC's mock trading game: options on the sum of n cards drawn from a deck.
@@ -49,8 +50,7 @@ export default function CardDesk() {
   const [result, setResult] = useState<{ key: string; quote: Quote; wire: { ms: number; cached: boolean } } | null>(null);
   const [failure, setFailure] = useState<{ key: string; message: string } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const boardScroll = useRef<HTMLDivElement>(null);
-  const [moreRight, setMoreRight] = useState(false);
+  const [boardScroll, moreRight] = useMoreRight();
 
   const quote = result?.quote ?? null;
   const wire = result?.wire ?? null;
@@ -97,18 +97,6 @@ export default function CardDesk() {
       });
     return () => ac.abort();
   }, [key, n, seen, strikes, replacement]);
-
-  // is there more of the board to the right of what is showing?
-  useEffect(() => {
-    const el = boardScroll.current;
-    if (!el) return;
-    const check = () => setMoreRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
-    if (el.firstElementChild) ro.observe(el.firstElementChild);
-    el.addEventListener("scroll", check, { passive: true });
-    return () => { ro.disconnect(); el.removeEventListener("scroll", check); };
-  }, []);
 
   const draw = (r: number) => {
     if (expired || (remaining.get(r) ?? 0) <= 0) return;
@@ -237,7 +225,7 @@ export default function CardDesk() {
             <table className="w-full font-mono text-fluid-xs tabular-nums" style={{ opacity: pending ? 0.55 : 1, transition: "opacity 160ms" }}>
               <thead>
                 <tr className="text-muted" style={{ borderBottom: "1px solid var(--color-border)" }}>
-                  <th className="sticky left-0 z-[1] bg-surface-elevated px-4 py-2.5 text-left font-normal">K</th>
+                  <th className="sticky left-0 z-[1] bg-surface-elevated bg-clip-padding px-4 py-2.5 text-left font-normal">K</th>
                   <th className="px-2 py-2.5 text-left font-normal text-secondary" colSpan={6}>call · theo Δ Γ Θ ψ χ</th>
                   <th className="px-2 py-2.5 text-left font-normal text-accent-dim" colSpan={6}>put · theo Δ Γ Θ ψ χ</th>
                 </tr>
@@ -247,7 +235,7 @@ export default function CardDesk() {
                   const callItm = future !== null && future > row.strike;
                   return (
                     <tr key={row.strike} style={{ borderBottom: "1px solid rgb(var(--brand-purple-rgb) / 0.12)" }}>
-                      <td className="sticky left-0 z-[1] bg-surface-elevated px-4 py-2.5 font-semibold text-ink">{row.strike}</td>
+                      <td className="sticky left-0 z-[1] bg-surface-elevated bg-clip-padding px-4 py-2.5 font-semibold text-ink">{row.strike}</td>
                       <GreekCells g={row.call} itm={callItm} tone="secondary" />
                       <GreekCells g={row.put} itm={future !== null && future < row.strike} tone="accent" />
                     </tr>

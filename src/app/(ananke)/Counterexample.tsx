@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { commandKind, describeChanges, field, type BranchResult, type Domain, type MinimizeResult, type RunResult, type State, type Step } from "./ananke";
 import type { Request, RequestBody, Response } from "./counterexample.worker";
+import { useMoreRight } from "@/app/(chrome)/useMoreRight";
 
 /* Counterexample.
    The engine (Ananke, js_of_ocaml build) runs in a Web Worker. This page
@@ -37,6 +38,7 @@ export default function Counterexample() {
   const [minimizing, setMinimizing] = useState(false);
   const [branch, setBranch] = useState<{ alt: Alt; data: Extract<BranchResult, { ok: true }>; ms: number } | null>(null);
   const [branching, setBranching] = useState<string | null>(null);
+  const [paymentsScroll, morePayments] = useMoreRight();
 
   // ── worker rpc ──
   const workerRef = useRef<Worker | null>(null);
@@ -241,17 +243,20 @@ export default function Counterexample() {
                 </tbody>
               </table>
               </div>
-              <div className="overflow-x-auto">
+              {/* on a phone the payments scroll sideways a line per row under a
+                  pinned id column, with a fade while there is more to the right */}
+              <div className="relative min-w-0">
+              <div ref={paymentsScroll} className="overflow-x-auto">
               <table className="w-full font-mono text-fluid-xs">
-                <thead><tr className="text-left text-muted"><th className="px-1 py-1 font-normal">payment</th><th className="px-1 py-1 font-normal">route</th><th className="px-1 py-1 font-normal text-right">authorized</th><th className="px-1 py-1 font-normal text-right">captured</th><th className="px-1 py-1 font-normal text-right">refunded</th><th className="px-1 py-1 font-normal"></th></tr></thead>
+                <thead><tr className="text-left text-muted"><th className="sticky left-0 z-[1] bg-surface-elevated bg-clip-padding px-1 py-1 font-normal">payment</th><th className="px-1 py-1 font-normal">route</th><th className="px-1 py-1 font-normal text-right">authorized</th><th className="px-1 py-1 font-normal text-right">captured</th><th className="px-1 py-1 font-normal text-right">refunded</th><th className="px-1 py-1 font-normal"></th></tr></thead>
                 <tbody>
                   {Object.entries(step.state.payments).map(([id, p]) => {
                     const q = prevState?.payments[id];
                     const cell = (changed: boolean) => (changed ? { background: "rgb(var(--brand-green-rgb) / 0.14)" } : undefined);
                     return (
                       <tr key={id} className={`border-t border-border/60 ${p.closed ? "text-muted" : "text-ink"}`}>
-                        <td className="px-1 py-1">{id}</td>
-                        <td className="px-1 py-1">{p.payer} → {p.payee}</td>
+                        <td className="sticky left-0 z-[1] bg-surface-elevated bg-clip-padding px-1 py-1">{id}</td>
+                        <td className="whitespace-nowrap px-1 py-1">{p.payer} → {p.payee}</td>
                         <td className="px-1 py-1 text-right tabular-nums" style={cell(!q)}>{fmt(p.authorized)}</td>
                         <td className="px-1 py-1 text-right tabular-nums" style={cell(!!q && q.captured !== p.captured)}>{fmt(p.captured)}</td>
                         <td className="px-1 py-1 text-right tabular-nums" style={cell(!!q && q.refunded !== p.refunded)}>{fmt(p.refunded)}</td>
@@ -262,6 +267,8 @@ export default function Counterexample() {
                   {Object.keys(step.state.payments).length === 0 && <tr><td className="px-1 py-1 text-muted" colSpan={6}>no payments yet</td></tr>}
                 </tbody>
               </table>
+              </div>
+              {morePayments && <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-surface-elevated" />}
               </div>
             </div>
           </div>
