@@ -17,7 +17,7 @@ export default function NotFound() {
             <span className="h-2.5 w-2.5 rounded-full bg-danger" />
             <span className="h-2.5 w-2.5 rounded-full bg-warn" />
             <span className="h-2.5 w-2.5 rounded-full bg-ok" />
-            <span className="ml-3 font-mono text-[0.6rem] font-medium text-ink">bash — 80×24</span>
+            <span className="ml-3 font-mono text-fluid-xs font-medium text-ink">bash — 80×24</span>
           </div>
           {/* terminal body — reads the missed path in the browser */}
           <NotFoundTerminal />

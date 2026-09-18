@@ -39,7 +39,7 @@ export default function NotFoundTerminal() {
       <p className="text-muted">No handler registered for this path.</p>
       <p className="text-muted mt-2">
         Did you mean:{" "}
-        <Link href={suggestion} className="text-accent hover:text-accent-dim transition-colors">
+        <Link href={suggestion} className="text-accent-dim transition-colors hover:text-ink">
           {suggestion}
         </Link>
         {" "}?
