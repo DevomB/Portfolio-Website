@@ -3,11 +3,17 @@
 import { m } from "framer-motion";
 import { fade } from "@/app/(home)/fade";
 
+// The featured work's languages first, in project order (Poker Calculations,
+// CardQuant, Athena's Pallas, Ananke, Gofer), then the rest of the stack.
 const stack = [
+  { slug: "cplusplus",   label: "C++20" },
+  { slug: "python",      label: "Python" },
+  { slug: "rust",        label: "Rust" },
+  { slug: "ocaml",       label: "OCaml" },
+  { slug: "go",          label: "Go" },
   { slug: "postgresql",  label: "PostgreSQL" },
   { slug: "nodedotjs",   label: "Node.js" },
   { slug: "typescript",  label: "TypeScript" },
-  { slug: "cplusplus",   label: "C++20" },
   { slug: "nextdotjs",   label: "Next.js" },
   { slug: "flutter",     label: "Flutter" },
   { slug: "redis",       label: "Redis" },
