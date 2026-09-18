@@ -123,7 +123,7 @@ export default function TectonixChart({ points, tool, branch }: Props) {
         {"// tectonix"}
       </m.p>
 
-      <m.div {...fade(0.05)} className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-16 items-start">
+      <m.div {...fade(0.05)} className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_16.25rem] lg:gap-16 items-start">
         {/* the chart */}
         <div>
           <h2 className="font-title text-fluid-3xl font-bold tracking-tight text-ink">
@@ -219,7 +219,7 @@ export default function TectonixChart({ points, tool, branch }: Props) {
                   style={{
                     left: `${(x(hover) / W) * 100}%`,
                     top: 0,
-                    maxWidth: 260,
+                    maxWidth: "16.25rem",
                   }}
                 >
                   <p className="font-sans text-fluid-base font-semibold text-ink leading-none">

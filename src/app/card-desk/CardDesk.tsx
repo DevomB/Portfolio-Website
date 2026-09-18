@@ -127,7 +127,7 @@ export default function CardDesk() {
   const future = quote?.future ?? null;
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22.5rem]">
       {/* ── left: the shoe, the drawn cards, the board ─────────────────── */}
       <div className="min-w-0 space-y-6">
         {/* headline numbers */}

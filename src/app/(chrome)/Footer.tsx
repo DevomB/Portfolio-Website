@@ -45,7 +45,7 @@ export default function Footer() {
         </p>
       </div>
 
-      <div className="select-none overflow-hidden" style={{ marginTop: "-5px" }} aria-hidden>
+      <div className="select-none overflow-hidden" style={{ marginTop: "-0.3125rem" }} aria-hidden>
         <p
           className="text-center font-wordmark leading-none whitespace-nowrap"
           style={{

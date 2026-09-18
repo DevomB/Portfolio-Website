@@ -19,8 +19,14 @@ const RING_R = 250;   // canvas centre → card centre; sized so 52 cards at ~30
 const LIFT = 26;      // extra radius for a card pulled out of the fan
 /** centre → the lowest edge a card can reach: a pulled-out card at 6 o'clock */
 const UNDER_RING = RING_R + LIFT + CARD_H / 2;
-/** The composition's scale in this viewport: all of BOX, with 16px beside it and 24px above and below. */
-const fitScale = () => Math.min(1, (window.innerWidth - 32) / BOX, (window.innerHeight - 48) / BOX);
+/** px per rem over 16: 1 up to a 1600px viewport, then growing with it (see `html` in globals.css). */
+const remScale = () => (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16;
+/** The composition's scale in this viewport: the page's own scale (1 up to 1600px), or less if
+ *  all of BOX, with a rem beside it and 1.5rem above and below, would not fit. */
+const fitScale = () => {
+  const k = remScale();
+  return Math.min(k, (window.innerWidth - 32 * k) / BOX, (window.innerHeight - 48 * k) / BOX);
+};
 const REVEAL_COUNT = 5;
 
 const STEP_DEG = 360 / COUNT;  // angular gap between neighbours in the closed ring
@@ -322,21 +328,22 @@ export default function Splash({ onComplete }: { onComplete: () => void }) {
   // writes this style key itself (it isn't in the JSX), so the imperative value
   // survives every React commit. Layout effect: measured before first paint.
   //
-  // Scaled below 1, the 11px subtitle would render under 11px (about 6px on a
-  // phone), so on a small screen it and the hand label leave the composition
-  // and sit, at the 11px label size, just under the ring's lowest card. The
-  // name stays in the ring. `compact` only flips when the scale crosses 1.
-  const [compact, setCompact] = useState(() => fitScale() < 1);
+  // Scaled below the page's own scale, the 11px subtitle would render under
+  // the 0.6875rem floor (about 6px on a phone), so on a small screen it and the
+  // hand label leave the composition and sit, at the label size, just under
+  // the ring's lowest card. The name stays in the ring. `compact` only flips
+  // when the fit crosses the page scale.
+  const [compact, setCompact] = useState(() => fitScale() < remScale());
   const underRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const fit = () => {
       const s = fitScale();
       if (boxRef.current) boxRef.current.style.transform = `scale(${s})`;
-      if (underRef.current) underRef.current.style.top = `calc(50% + ${Math.round(UNDER_RING * s) + 14}px)`;
+      if (underRef.current) underRef.current.style.top = `calc(50% + ${Math.round(UNDER_RING * s)}px + 0.875rem)`;
       return s;
     };
     fit();
-    const onResize = () => setCompact(fit() < 1);
+    const onResize = () => setCompact(fit() < remScale());
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
@@ -390,7 +397,7 @@ export default function Splash({ onComplete }: { onComplete: () => void }) {
       className="font-mono whitespace-nowrap font-bold"
       style={{
         fontSize: compact ? "var(--text-xs)" : 15,
-        marginTop: compact ? 8 : 18,
+        marginTop: compact ? "0.5rem" : 18,
         letterSpacing: "0.18em",
         // full-strength tokens only: a pair or better is green, an
         // ordinary deal is ink (never muted — it is still worth

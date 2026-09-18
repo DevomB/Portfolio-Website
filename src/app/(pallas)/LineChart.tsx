@@ -2,14 +2,16 @@
 
 import { useRef, type ReactNode } from "react";
 import { useWidth } from "@/app/(chrome)/useWidth";
+import { useRem } from "@/app/(chrome)/useRem";
 import { axisTicks } from "./format";
 
 /* A small multi-series line chart shared by the Pallas demos, dataviz-spec:
    2px lines, hairline grid, legend with line keys, crosshair tooltip on the
    nearest index. Colours are validated on the dark surface. It draws at the
-   width it is shown at, one unit to a pixel and a fixed height, so the axis
-   labels are 11px on a phone as on a desk. Until a series has data it draws
-   no axis at all — just the frame and what will fill it. */
+   width it is shown at, one unit to a pixel, and sizes everything else in rem
+   (`height` is px at a 16px root): the axis labels are 0.6875rem on a phone,
+   on a desk and on a wide screen alike. Until a series has data it draws no
+   axis at all — just the frame and what will fill it. */
 
 export const ORIGINAL = "#a35cff";   // purple
 export const ADVERSARIAL = "#1fb14a"; // green
@@ -33,7 +35,8 @@ export default function LineChart({
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const ref = useRef<SVGSVGElement>(null);
-  const W = useWidth(wrap, 760), H = height, PAD = { t: 14, r: 16, b: 18, l: 62 };
+  const k = useRem() / 16; // 1 up to a 1600px viewport
+  const W = useWidth(wrap, 760), H = height * k, PAD = { t: 14 * k, r: 16 * k, b: 18 * k, l: 62 * k };
   const hasData = series.some((s) => s && s.length > 0);
   const pw = W - PAD.l - PAD.r, ph = H - PAD.t - PAD.b;
   const all = series.flatMap((s) => s ?? []);
@@ -69,7 +72,7 @@ export default function LineChart({
             {axisTicks(lo, hi, format).map((t) => (
               <g key={t}>
                 <line x1={PAD.l} x2={W - PAD.r} y1={y(t)} y2={y(t)} stroke="rgb(var(--brand-purple-rgb) / 0.14)" strokeWidth={1} />
-                <text x={PAD.l - 8} y={y(t) + 4} textAnchor="end" fontSize={11} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{format(t)}</text>
+                <text x={PAD.l - 8 * k} y={y(t) + 4 * k} textAnchor="end" fontSize={11 * k} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{format(t)}</text>
               </g>
             ))}
             {baseline !== undefined && (
@@ -77,13 +80,13 @@ export default function LineChart({
             )}
             {series.map((s, si) => s ? (
               <path key={si} d={s.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ")}
-                    fill="none" stroke={colors[si]} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+                    fill="none" stroke={colors[si]} strokeWidth={2 * k} strokeLinejoin="round" strokeLinecap="round" />
             ) : null)}
             {hover !== null && (
               <g>
                 <line x1={x(hover)} x2={x(hover)} y1={PAD.t} y2={PAD.t + ph} stroke="rgb(var(--brand-purple-rgb) / 0.35)" strokeWidth={1} />
                 {series.map((s, si) => s && s[hover] !== undefined ? (
-                  <circle key={si} cx={x(hover)} cy={y(s[hover]!)} r={4} fill={colors[si]} stroke="var(--color-bg)" strokeWidth={2} />
+                  <circle key={si} cx={x(hover)} cy={y(s[hover]!)} r={4 * k} fill={colors[si]} stroke="var(--color-bg)" strokeWidth={2 * k} />
                 ) : null)}
               </g>
             )}

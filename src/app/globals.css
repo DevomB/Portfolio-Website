@@ -70,7 +70,14 @@
   --shell-inline: clamp(1rem, 3vw + 0.5rem, 2rem);
 }
 
+/* Above 1600px the whole site scales as one composition. The root size is
+   1vw — exactly 16px at 1600 — floored at the visitor's own default size
+   (100%, 16px unless they changed it) and capped at 1.75× (175%, reached at
+   2800px). Everything sized in rem scales with it: the fluid type, Tailwind's
+   spacing, the 76rem shell, the sidebars. So a wide screen shows the 1600
+   layout, bigger, instead of the same layout floating in black bands. */
 html {
+  font-size: clamp(100%, 1vw, 175%);
   scroll-behavior: smooth;
 }
 
@@ -141,16 +148,17 @@ body {
     border-radius: 999px;
   }
 
-  /* Poker Lab's playing card: 64×90 at most, the same card at any narrower
-     column (five abreast on a 320px phone is ~37px each). The corner index
-     and the centre pip scale with the card; below ~46px the card keeps only
-     its top-left index, the way a real mini deck does. */
+  /* Poker Lab's playing card: 4×5.625rem (64×90px at 16px) at most, the same
+     card at any narrower column (five abreast on a 320px phone is ~37px
+     each). The corner index and the centre pip scale with the card; below
+     2.875rem (~46px) it keeps only its top-left index, the way a real mini
+     deck does. */
   .playing-card {
     position: relative;
     width: 100%;
-    max-width: 64px;
+    max-width: 4rem;
     aspect-ratio: 64 / 90;
-    border-radius: 8px;
+    border-radius: 0.5rem;
     /* a solid face under the sheen, so contrast is measured against white */
     background: var(--color-card-face) linear-gradient(160deg, var(--color-card-face) 0%, var(--color-card-face-2) 100%);
     container-type: inline-size;
@@ -158,34 +166,34 @@ body {
   }
   .playing-card-slot {
     width: 100%;
-    max-width: 64px;
+    max-width: 4rem;
     aspect-ratio: 64 / 90;
-    border-radius: 8px;
+    border-radius: 0.5rem;
     border: 1.5px dashed rgb(var(--brand-purple-rgb) / 0.18);
     background: rgb(var(--brand-purple-rgb) / 0.03);
   }
   .playing-card-index {
     position: absolute;
-    top: 5px;
-    left: 6px;
+    top: 0.3125rem;
+    left: 0.375rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     line-height: 1;
     font-family: var(--font-mono), monospace;
-    font-size: clamp(11px, 23cqw, 15px);
+    font-size: clamp(0.6875rem, 23cqw, 0.9375rem);
     font-weight: 800;
   }
   .playing-card-index > span {
     margin-top: 1px;
-    font-size: 11px;
+    font-size: 0.6875rem;
     font-weight: 400;
   }
   .playing-card-index-flip {
     top: auto;
     left: auto;
-    bottom: 5px;
-    right: 6px;
+    bottom: 0.3125rem;
+    right: 0.375rem;
     transform: rotate(180deg);
   }
   .playing-card-pip {
@@ -194,9 +202,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(16px, 47cqw, 30px);
+    font-size: clamp(1rem, 47cqw, 1.875rem);
   }
-  @container (max-width: 46px) {
+  @container (max-width: 2.875rem) {
     .playing-card-pip,
     .playing-card-index-flip {
       display: none;

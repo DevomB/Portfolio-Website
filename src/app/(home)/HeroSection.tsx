@@ -59,7 +59,7 @@ export default function HeroSection() {
 
   return (
     <section className="relative hero-fold overflow-hidden flex items-center">
-      <div className="relative w-full grid grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_400px] lg:gap-24">
+      <div className="relative w-full grid grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_25rem] lg:gap-24">
         <div>
           <m.h2
             ref={nameRef}

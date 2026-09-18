@@ -151,7 +151,7 @@ export default function Counterexample() {
   const stopMessage = data?.stop_error ? data.stop_error.replace(/^Invariant_violation:\s*/, "") : null;
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_18.75rem]">
       <div className="min-w-0 space-y-6">
         {/* ── timeline ── */}
         <div className={`card-soft p-4 transition-opacity ${pendingRun ? "opacity-70" : ""}`}>
@@ -159,7 +159,7 @@ export default function Counterexample() {
             <p className="font-mono text-fluid-xs text-muted">trace · {steps.length} commands recorded · click a step, or use ← →</p>
             <p className="font-mono text-fluid-xs text-muted">{data ? `${fmt(data.events)} events · replay ${data.replay_ok ? "verified identical" : "DIVERGED"} · ${run!.ms} ms` : "recording…"}</p>
           </div>
-          <div className="flex flex-wrap gap-[3px] px-1">
+          <div className="flex flex-wrap gap-[0.1875rem] px-1">
             {steps.map((s) => {
               const bad = s.checks.some((c) => !c.ok);
               const after = stoppedAt !== null && s.index > stoppedAt;
@@ -171,7 +171,7 @@ export default function Counterexample() {
                   onClick={() => setSelected(s.index)}
                   aria-label={`step ${s.index + 1}: ${s.command}`}
                   title={s.command}
-                  className="h-5 w-5 rounded-[3px] transition-transform hover:scale-110"
+                  className="h-5 w-5 rounded-[0.1875rem] transition-transform hover:scale-110"
                   style={{
                     background: bad ? "var(--color-danger)" : retry ? "rgb(var(--color-warn-rgb) / 0.5)" : `color-mix(in oklab, ${kindColor[commandKind(s.command)] ?? "var(--color-muted)"} 45%, transparent)`,
                     opacity: after ? 0.3 : 1,
@@ -293,7 +293,7 @@ export default function Counterexample() {
               {/* one 3-of-5 unit bar per candidate; the strip squeezes to fit
                   its card instead of pushing the page wide on a long log */}
               <svg viewBox={`0 0 ${minimize.data.log.length * 5} 32`} preserveAspectRatio="none" className="mt-2 block h-8 w-full"
-                   style={{ maxWidth: minimize.data.log.length * 5 }} role="img" aria-label="candidate lengths tried, in order; green ones still failed">
+                   style={{ maxWidth: `${minimize.data.log.length * 0.3125}rem` }} role="img" aria-label="candidate lengths tried, in order; green ones still failed">
                 {minimize.data.log.map((l, i) => {
                   const h = 32 * Math.max(0.08, l.length / minimize.data.original);
                   return (

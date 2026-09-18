@@ -103,7 +103,7 @@ export default function AdversarialTape() {
   const set = (k: keyof Required<ArenaParams>, v: number) => setParams((p) => ({ ...p, [k]: v }));
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_18.75rem]">
       <div className="min-w-0 space-y-6">
         {/* tape */}
         <div className="card-soft p-4">

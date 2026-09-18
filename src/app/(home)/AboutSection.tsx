@@ -68,6 +68,7 @@ export default function AboutSection() {
                   height={22}
                   loading="lazy"
                   decoding="async"
+                  className="h-[1.375rem] w-[1.375rem]"
                   style={{ opacity: 0.7 }}
                 />
                 <span className="font-mono text-fluid-xs text-muted">{s.label}</span>

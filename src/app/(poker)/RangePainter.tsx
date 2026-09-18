@@ -47,7 +47,7 @@ export default function RangePainter({ title, range, setRange, board, hover, onH
         </button>
       </div>
       <div
-        className="mt-3 grid select-none touch-none grid-cols-[repeat(13,minmax(0,1fr))] gap-px sm:gap-[2px]"
+        className="mt-3 grid select-none touch-none grid-cols-[repeat(13,minmax(0,1fr))] gap-px sm:gap-0.5"
         onPointerLeave={() => setPainting(null)}
         onPointerUp={() => setPainting(null)}
       >
@@ -65,7 +65,7 @@ export default function RangePainter({ title, range, setRange, board, hover, onH
               onPointerEnter={() => { if (painting !== null) paintCell(k, painting); }}
               onMouseEnter={() => onHover(k)}
               onMouseLeave={() => onHover(null)}
-              className={`aspect-square overflow-hidden rounded-[2px] font-mono text-[0.5625rem] leading-none tracking-tighter transition-colors xl:text-[0.625rem] ${on ? "text-ink" : "text-muted"}`}
+              className={`aspect-square overflow-hidden rounded-sm font-mono text-[0.5625rem] leading-none tracking-tighter transition-colors xl:text-[0.625rem] ${on ? "text-ink" : "text-muted"}`}
               style={{
                 background: on
                   ? `rgb(var(--brand-green-rgb) / ${0.18 + 0.5 * t})`

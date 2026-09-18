@@ -154,7 +154,7 @@ export default function PokerLab() {
     }
   };
 
-  const inputStyle = { borderColor: "var(--color-border)", background: "var(--color-surface-elevated)", fontSize: "16px" } as const;
+  const inputStyle = { borderColor: "var(--color-border)", background: "var(--color-surface-elevated)", fontSize: "1rem" } as const;
   const inputCls = "w-full rounded-md border px-3 py-2 font-mono text-ink outline-none transition-colors focus:border-accent/50";
 
   // Which board cards to display: prefer sample (from winning run) when available
@@ -167,7 +167,7 @@ export default function PokerLab() {
     // `layout` animations need domMax; nested here so that weight ships
     // only on routes that render the lab, never on `/` (see MotionProvider)
     <LazyMotion features={domMax}>
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_25rem]">
 
       {/* ── LEFT: Controls ─────────────────────────── */}
       <div className="min-w-0 space-y-5">

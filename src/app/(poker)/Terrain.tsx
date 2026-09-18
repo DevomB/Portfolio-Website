@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { MATRIX_RANKS, cellIndex, cellOf } from "@/app/(poker)/handMatrix";
 import { clamp } from "@/lib/num";
 import { useWidth } from "@/app/(chrome)/useWidth";
+import { useRem } from "@/app/(chrome)/useRem";
 
 /* One terrain, two surfaces. The 13×13 starting-hand matrix drawn as an
    isometric mesh: a vertex per class, height in [0, 1], triangles painted by
@@ -161,10 +162,11 @@ export default function Terrain({ target, triFill, hover, onHover, onSelect, sel
     );
   };
 
-  // the mesh scales with its card; its rank labels are held at 11px on screen
+  // the mesh scales with its card; its rank labels are held at 0.6875rem on
+  // screen (11px at a 16px root)
   const frame = useRef<HTMLDivElement>(null);
   const unitsPerPx = TERRAIN_W / useWidth(frame, TERRAIN_W);
-  const labelSize = 11 * unitsPerPx;
+  const labelSize = 0.6875 * useRem() * unitsPerPx;
 
   return (
     <div ref={frame} className="relative">

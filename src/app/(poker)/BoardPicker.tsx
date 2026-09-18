@@ -81,7 +81,7 @@ export default function BoardPicker({ board, onChange, variant }: Props) {
         {(["s", "h", "d", "c"] as const).map((s) => (
           <div key={s} className="contents">
             <span className="font-mono text-fluid-xs" style={{ color: SUIT_RED.has(s) ? "var(--color-danger)" : "var(--color-ink)" }}>{SUIT_GLYPH[s]}</span>
-            <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-[2px]">
+            <div className="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-0.5">
               {MATRIX_RANKS.split("").map((r) => {
                 const c = r + s; const used = inBoard(c);
                 return (

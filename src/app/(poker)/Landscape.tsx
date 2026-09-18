@@ -118,7 +118,7 @@ export default function Landscape() {
     : "";
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_18.75rem] xl:grid-cols-[minmax(0,1fr)_22.5rem]">
       {/* ── terrain ── */}
       <div className="card-soft min-w-0 p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-2">

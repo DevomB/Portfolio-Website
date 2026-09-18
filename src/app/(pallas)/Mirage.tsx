@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Button } from "@/app/(chrome)/Button";
 import { useWidth } from "@/app/(chrome)/useWidth";
+import { useRem } from "@/app/(chrome)/useRem";
 import LineChart from "./LineChart";
 import { clamp } from "@/lib/num";
 import { labelOn, oklchLuminance } from "@/lib/color";
@@ -30,11 +31,12 @@ const rampL = (t: number) => (26 + 52 * clamp(t, 0, 1)) / 100;
 const rampC = (t: number) => 0.12 + 0.08 * t;
 const ramp = (t: number) => `oklch(${(rampL(t) * 100).toFixed(1)}% ${rampC(t).toFixed(3)} 300)`;
 
-// The charts draw at their shown width, one unit to a pixel, so every label
-// is 11px Geist Mono: about 6.6px an advance.
+// The charts draw at their shown width, one unit to a pixel, and size the
+// rest in rem: every label is 0.6875rem Geist Mono (11px at a 16px root),
+// about 0.6 of that an advance. `k` is px per rem over 16.
 const FONT = 11;
 const ADVANCE = 6.6;
-const textWidth = (label: string) => label.length * ADVANCE;
+const textWidth = (label: string, k: number) => label.length * ADVANCE * k;
 
 // ── the heat map ───────────────────────────────────────────────────────────
 function HeatMap({ family, grid, metric, peak, plateau, walk, hover, onHover }: {
@@ -49,11 +51,12 @@ function HeatMap({ family, grid, metric, peak, plateau, walk, hover, onHover }: 
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const W = useWidth(wrap, 760);
+  const k = useRem() / 16;
   const spec = FAMILIES[family];
   const { nx, ny } = gridShape(family);
-  const L = 56, B = 34, T = 8, R = 8;
+  const L = 56 * k, B = 34 * k, T = 8 * k, R = 8 * k;
   const cw = (W - L - R) / nx;
-  const ch = Math.min(46, Math.max(30, cw * 0.62));
+  const ch = Math.min(46 * k, Math.max(30 * k, cw * 0.62));
   const H = T + ny * ch + B;
   const scores = grid.map((s) => (s ? (metric === "pnl" ? s.pnl : s.sharpe) : null));
   const known = scores.filter((s): s is number => s !== null);
@@ -62,7 +65,7 @@ function HeatMap({ family, grid, metric, peak, plateau, walk, hover, onHover }: 
   const cells = gridCells(family);
   const picksAt = (i: number) => walk.filter((f) => f.pick === i).map((f) => f.fold);
   // a narrow column shows every other x value rather than overlapping them
-  const xStep = Math.max(1, Math.ceil((Math.max(...spec.x.values.map((v) => textWidth(String(v)))) + 6) / cw));
+  const xStep = Math.max(1, Math.ceil((Math.max(...spec.x.values.map((v) => textWidth(String(v), k))) + 6 * k) / cw));
   return (
     <div ref={wrap}>
       <svg viewBox={`0 0 ${W} ${H}`} className="block w-full h-auto select-none" role="img" aria-label={`In-sample sweep of ${cells.length} parameter sets`} onPointerLeave={() => onHover(null)}>
@@ -77,8 +80,8 @@ function HeatMap({ family, grid, metric, peak, plateau, walk, hover, onHover }: 
                     fill={s === null ? "rgb(var(--brand-purple-rgb) / 0.06)" : ramp(t)}
                     stroke={hover === c.index ? "var(--color-secondary)" : "none"} strokeWidth={1.5} />
               {/* the value when it fits its cell; otherwise it is in the tooltip and the table */}
-              {s !== null && textWidth(label) + 8 <= cw && (
-                <text x={x + cw / 2} y={y + ch / 2 + 4} textAnchor="middle" fontSize={FONT} fontFamily="var(--font-mono), monospace"
+              {s !== null && textWidth(label, k) + 8 * k <= cw && (
+                <text x={x + cw / 2} y={y + ch / 2 + 4 * k} textAnchor="middle" fontSize={FONT * k} fontFamily="var(--font-mono), monospace"
                       fill={labelOn(oklchLuminance(rampL(t), rampC(t), 300))}>{label}</text>
               )}
             </g>
@@ -88,32 +91,32 @@ function HeatMap({ family, grid, metric, peak, plateau, walk, hover, onHover }: 
         {cells.map((c) => {
           const x = L + c.xi * cw, y = T + (ny - 1 - c.yi) * ch;
           const folds = picksAt(c.index);
-          const badge = textWidth(folds.join("")) + 6;
+          const badge = textWidth(folds.join(""), k) + 6 * k;
           return (
             <g key={`m${c.index}`} pointerEvents="none">
               {plateau === c.index && <rect x={x + 2.5} y={y + 2.5} width={cw - 5} height={ch - 5} rx={3} fill="none" stroke={PLATEAU} strokeWidth={2} strokeDasharray="4 3" />}
               {peak === c.index && <rect x={x + 2.5} y={y + 2.5} width={cw - 5} height={ch - 5} rx={3} fill="none" stroke={PEAK} strokeWidth={2} />}
-              {folds.length > 0 && (badge + 8 <= cw ? (
+              {folds.length > 0 && (badge + 8 * k <= cw ? (
                 <g>
-                  <rect x={x + 4} y={y + 4} width={badge} height={14} rx={2} fill={WALK} />
-                  <text x={x + 4 + badge / 2} y={y + 15} textAnchor="middle" fontSize={FONT} fontWeight={700} fontFamily="var(--font-mono), monospace" fill="#141414">{folds.join("")}</text>
+                  <rect x={x + 4 * k} y={y + 4 * k} width={badge} height={14 * k} rx={2 * k} fill={WALK} />
+                  <text x={x + 4 * k + badge / 2} y={y + 15 * k} textAnchor="middle" fontSize={FONT * k} fontWeight={700} fontFamily="var(--font-mono), monospace" fill="#141414">{folds.join("")}</text>
                 </g>
               ) : (
-                <rect x={x + 4} y={y + 4} width={8} height={8} rx={2} fill={WALK} />
+                <rect x={x + 4 * k} y={y + 4 * k} width={8 * k} height={8 * k} rx={2 * k} fill={WALK} />
               ))}
             </g>
           );
         })}
         {/* axes */}
         {spec.x.values.map((v, xi) => xi % xStep === 0 && (
-          <text key={`x${xi}`} x={L + xi * cw + cw / 2} y={H - 18} textAnchor="middle" fontSize={FONT} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{v}</text>
+          <text key={`x${xi}`} x={L + xi * cw + cw / 2} y={H - 18 * k} textAnchor="middle" fontSize={FONT * k} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{v}</text>
         ))}
-        <text x={L + (W - L - R) / 2} y={H - 3} textAnchor="middle" fontSize={FONT} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{spec.x.label}</text>
+        <text x={L + (W - L - R) / 2} y={H - 3 * k} textAnchor="middle" fontSize={FONT * k} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{spec.x.label}</text>
         {spec.y && spec.y.values.map((v, yi) => (
-          <text key={`y${yi}`} x={L - 8} y={T + (ny - 1 - yi) * ch + ch / 2 + 4} textAnchor="end" fontSize={FONT} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{v}</text>
+          <text key={`y${yi}`} x={L - 8 * k} y={T + (ny - 1 - yi) * ch + ch / 2 + 4 * k} textAnchor="end" fontSize={FONT * k} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{v}</text>
         ))}
         {spec.y && (
-          <text x={10} y={T + (ny * ch) / 2} textAnchor="middle" fontSize={FONT} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)" transform={`rotate(-90 10 ${T + (ny * ch) / 2})`}>{spec.y.label}</text>
+          <text x={10 * k} y={T + (ny * ch) / 2} textAnchor="middle" fontSize={FONT * k} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)" transform={`rotate(-90 ${10 * k} ${T + (ny * ch) / 2})`}>{spec.y.label}</text>
         )}
       </svg>
     </div>
@@ -124,13 +127,14 @@ function HeatMap({ family, grid, metric, peak, plateau, walk, hover, onHover }: 
 function NoiseStrip({ values, observed, metric }: { values: number[]; observed: number | null; metric: Metric }) {
   const wrap = useRef<HTMLDivElement>(null);
   const W = useWidth(wrap, 760);
-  const H = 70, L = 16, R = 16;
+  const k = useRem() / 16;
+  const H = 70 * k, L = 16 * k, R = 16 * k;
   const all = [...values, ...(observed !== null ? [observed] : [])];
   const lo = all.length ? Math.min(...all) : 0, hi = all.length ? Math.max(...all) : 1;
   const span = Math.max(hi - lo, 1e-9);
   const x = (v: number) => L + ((v - lo) / span) * (W - L - R);
   // a centred label slides inward rather than running off either edge
-  const centred = (v: number, label: string) => clamp(x(v), textWidth(label) / 2 + 2, W - textWidth(label) / 2 - 2);
+  const centred = (v: number, label: string) => clamp(x(v), textWidth(label, k) / 2 + 2 * k, W - textWidth(label, k) / 2 - 2 * k);
   const sorted = [...values].sort((a, b) => a - b);
   const median = sorted.length ? sorted[Math.floor(sorted.length / 2)]! : null;
   const luck = median !== null ? `luck, typically ${fmt(metric, median)}` : "";
@@ -141,20 +145,20 @@ function NoiseStrip({ values, observed, metric }: { values: number[]; observed: 
         <p className="px-1 font-mono text-fluid-xs text-muted">shuffled worlds appear here as they finish</p>
       ) : (
         <svg viewBox={`0 0 ${W} ${H}`} className="block w-full h-auto" role="img" aria-label="Best in-sample score in each shuffled world, against the observed best">
-          <line x1={L} x2={W - R} y1={34} y2={34} stroke="rgb(var(--brand-purple-rgb) / 0.25)" strokeWidth={1} />
+          <line x1={L} x2={W - R} y1={34 * k} y2={34 * k} stroke="rgb(var(--brand-purple-rgb) / 0.25)" strokeWidth={1} />
           {values.map((v, i) => (
-            <circle key={i} cx={x(v)} cy={34 + ((i % 5) - 2) * 3} r={4} fill={WALK} fillOpacity={0.55} />
+            <circle key={i} cx={x(v)} cy={(34 + ((i % 5) - 2) * 3) * k} r={4 * k} fill={WALK} fillOpacity={0.55} />
           ))}
           {median !== null && (
             <g>
-              <line x1={x(median)} x2={x(median)} y1={20} y2={48} stroke="var(--color-muted)" strokeWidth={1} strokeDasharray="2 3" />
-              <text x={centred(median, luck)} y={65} textAnchor="middle" fontSize={FONT} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{luck}</text>
+              <line x1={x(median)} x2={x(median)} y1={20 * k} y2={48 * k} stroke="var(--color-muted)" strokeWidth={1} strokeDasharray="2 3" />
+              <text x={centred(median, luck)} y={65 * k} textAnchor="middle" fontSize={FONT * k} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{luck}</text>
             </g>
           )}
           {observed !== null && (
             <g>
-              <line x1={x(observed)} x2={x(observed)} y1={14} y2={54} stroke={PEAK} strokeWidth={2} />
-              <text x={centred(observed, mine)} y={10} textAnchor="middle" fontSize={FONT} fontFamily="var(--font-mono), monospace" fill="var(--color-ink)">{mine}</text>
+              <line x1={x(observed)} x2={x(observed)} y1={14 * k} y2={54 * k} stroke={PEAK} strokeWidth={2 * k} />
+              <text x={centred(observed, mine)} y={10 * k} textAnchor="middle" fontSize={FONT * k} fontFamily="var(--font-mono), monospace" fill="var(--color-ink)">{mine}</text>
             </g>
           )}
         </svg>
@@ -218,7 +222,7 @@ export default function Mirage() {
   const worldLabel = (k: WorldKind, s: number) => (k === "noise" ? "noise" : `${WORLDS.find((w) => w.key === k)!.label}, φ = ${phiOf(k, s).toFixed(2)}`);
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_18.75rem]">
       <div className="min-w-0 space-y-6">
         {/* ── the grid ── */}
         <div className="card-soft p-4">
