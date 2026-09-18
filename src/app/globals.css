@@ -141,6 +141,67 @@ body {
     border-radius: 999px;
   }
 
+  /* Poker Lab's playing card: 64×90 at most, the same card at any narrower
+     column (five abreast on a 320px phone is ~37px each). The corner index
+     and the centre pip scale with the card; below ~46px the card keeps only
+     its top-left index, the way a real mini deck does. */
+  .playing-card {
+    position: relative;
+    width: 100%;
+    max-width: 64px;
+    aspect-ratio: 64 / 90;
+    border-radius: 8px;
+    background: linear-gradient(160deg, var(--color-card-face) 0%, var(--color-card-face-2) 100%);
+    container-type: inline-size;
+    user-select: none;
+  }
+  .playing-card-slot {
+    width: 100%;
+    max-width: 64px;
+    aspect-ratio: 64 / 90;
+    border-radius: 8px;
+    border: 1.5px dashed rgb(var(--brand-purple-rgb) / 0.18);
+    background: rgb(var(--brand-purple-rgb) / 0.03);
+  }
+  .playing-card-index {
+    position: absolute;
+    top: 5px;
+    left: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+    font-family: var(--font-mono), monospace;
+    font-size: clamp(11px, 23cqw, 15px);
+    font-weight: 800;
+  }
+  .playing-card-index > span {
+    margin-top: 1px;
+    font-size: 11px;
+    font-weight: 400;
+  }
+  .playing-card-index-flip {
+    top: auto;
+    left: auto;
+    bottom: 5px;
+    right: 6px;
+    transform: rotate(180deg);
+  }
+  .playing-card-pip {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(16px, 47cqw, 30px);
+  }
+  @container (max-width: 46px) {
+    .playing-card-pip,
+    .playing-card-index-flip {
+      display: none;
+    }
+  }
+
   /* subtle SQL/backend text that floats in the hero background */
   .sql-ghost {
     font-family: var(--font-mono), ui-monospace, monospace;

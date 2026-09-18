@@ -30,73 +30,47 @@ function parseCards(line: string): CardData[] {
 const ease = [0.21, 0.47, 0.32, 0.98] as [number, number, number, number];
 
 // ── Single flat playing card ──────────────────────────────────────────────────
+// Sized by its column (see .playing-card in globals.css), so a row of five
+// fits a 320px phone and tops out at 64×90 on a desk.
 function Card({
   card,
   highlight = false,
   dim = false,
-  size = "md",
-  style,
 }: {
   card: CardData;
   highlight?: boolean;
   dim?: boolean;
-  size?: "sm" | "md";
-  style?: React.CSSProperties;
 }) {
-  const w = size === "sm" ? 52 : 64;
-  const h = size === "sm" ? 74 : 90;
-  const rSize = size === "sm" ? 12 : 15;
-  const sSize = size === "sm" ? 9 : 11;
-  const cSize = size === "sm" ? 24 : 30;
-  const color = card.red ? "var(--color-card-red)" : "var(--color-card-black)";
-
   return (
     <m.div
       layout
+      className="playing-card"
       style={{
-        width: w,
-        height: h,
-        borderRadius: 8,
-        background: "linear-gradient(160deg,var(--color-card-face) 0%,var(--color-card-face-2) 100%)",
+        color: card.red ? "var(--color-card-red)" : "var(--color-card-black)",
         border: highlight
           ? "2px solid var(--color-accent)"
           : "1.5px solid var(--color-card-edge)",
         boxShadow: highlight
           ? "0 4px 16px rgba(0,0,0,0.18), 0 0 0 3px rgb(var(--brand-purple-rgb) / 0.2)"
           : "0 3px 10px rgb(var(--brand-black-rgb) / 0.6)",
-        position: "relative",
-        flexShrink: 0,
-        userSelect: "none",
         opacity: dim ? 0.45 : 1,
-        ...style,
       }}
     >
-      <div style={{ position: "absolute", top: 5, left: 6, color, lineHeight: 1 }}>
-        <div style={{ fontSize: rSize, fontWeight: 800, fontFamily: "var(--font-mono), monospace" }}>{card.rank}</div>
-        <div style={{ fontSize: sSize, marginTop: 1 }}>{card.suitLabel}</div>
-      </div>
-      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color, fontSize: cSize }}>{card.suitLabel}</div>
-      <div style={{ position: "absolute", bottom: 5, right: 6, color, lineHeight: 1, transform: "rotate(180deg)", fontFamily: "var(--font-mono), monospace" }}>
-        <div style={{ fontSize: rSize, fontWeight: 800 }}>{card.rank}</div>
-        <div style={{ fontSize: sSize, marginTop: 1 }}>{card.suitLabel}</div>
-      </div>
+      <div className="playing-card-index">{card.rank}<span>{card.suitLabel}</span></div>
+      <div className="playing-card-pip" aria-hidden>{card.suitLabel}</div>
+      <div className="playing-card-index playing-card-index-flip" aria-hidden>{card.rank}<span>{card.suitLabel}</span></div>
     </m.div>
   );
 }
 
 // ── Empty card slot placeholder ───────────────────────────────────────────────
-function EmptySlot({ size = "md" }: { size?: "sm" | "md" }) {
-  const w = size === "sm" ? 52 : 64;
-  const h = size === "sm" ? 74 : 90;
-  return (
-    <div style={{
-      width: w, height: h, borderRadius: 8,
-      border: "1.5px dashed rgb(var(--brand-purple-rgb) / 0.18)",
-      background: "rgb(var(--brand-purple-rgb) / 0.03)",
-      flexShrink: 0,
-    }} />
-  );
+function EmptySlot() {
+  return <div className="playing-card-slot" />;
 }
+
+/** Five columns, one per board card; the hand and villain rows use the same
+ *  columns so every card on the table is the same size. */
+const CARD_ROW = "grid max-w-[22rem] grid-cols-5 gap-1.5 sm:gap-2";
 
 type EquityResult = {
   equity: number;
@@ -192,10 +166,10 @@ export default function PokerLab() {
     // `layout` animations need domMax; nested here so that weight ships
     // only on routes that render the lab, never on `/` (see MotionProvider)
     <LazyMotion features={domMax}>
-    <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
 
       {/* ── LEFT: Controls ─────────────────────────── */}
-      <div className="space-y-5">
+      <div className="min-w-0 space-y-5">
 
         {/* Target + picker */}
         <div>
@@ -314,7 +288,7 @@ export default function PokerLab() {
       </div>
 
       {/* ── RIGHT: Results + table layout ─────────────────────────── */}
-      <div className="rounded-xl border flex flex-col"
+      <div className="min-w-0 rounded-xl border flex flex-col"
         style={{ borderColor: "var(--color-border)", background: "var(--color-surface-elevated)" }}>
 
         {/* Stats */}
@@ -372,7 +346,7 @@ export default function PokerLab() {
             <p className="font-mono text-[0.6rem] text-muted/50 tracking-widest uppercase mb-3">
               {sampleBoard ? "sample winning board" : "board"}
             </p>
-            <div className="flex gap-2">
+            <div className={CARD_ROW}>
               {displayBoard.map((card, i) => (
                 <AnimatePresence key={i} mode="wait">
                   {card ? (
@@ -381,10 +355,10 @@ export default function PokerLab() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ duration: 0.3, delay: i * 0.05, ease }}>
-                      <Card card={card} size="md" />
+                      <Card card={card} />
                     </m.div>
                   ) : (
-                    <EmptySlot key={`empty-${i}`} size="md" />
+                    <EmptySlot key={`empty-${i}`} />
                   )}
                 </AnimatePresence>
               ))}
@@ -397,7 +371,7 @@ export default function PokerLab() {
               style={{ color: "var(--color-accent)", opacity: 0.7 }}>
               your hand
             </p>
-            <div className="flex gap-2">
+            <div className={CARD_ROW}>
               <AnimatePresence mode="sync">
                 {heroCards.slice(0, 2).map((card, i) => (
                   <m.div key={card.code}
@@ -408,12 +382,11 @@ export default function PokerLab() {
                     <Card
                       card={card}
                       highlight={sample ? sample.heroInBest[i] : false}
-                      size="md"
                     />
                   </m.div>
                 ))}
-                {heroCards.length === 0 && <EmptySlot size="md" />}
-                {heroCards.length === 1 && <EmptySlot size="md" />}
+                {heroCards.length === 0 && <EmptySlot />}
+                {heroCards.length === 1 && <EmptySlot />}
               </AnimatePresence>
             </div>
           </div>
@@ -430,13 +403,13 @@ export default function PokerLab() {
                 <p className="font-mono text-[0.6rem] text-muted/40 tracking-widest uppercase mb-3">
                   villain (sample run)
                 </p>
-                <div className="flex gap-2">
+                <div className={CARD_ROW}>
                   {sampleVillain.map((card, i) => (
                     <m.div key={card.code}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.28, delay: 0.2 + i * 0.07, ease }}>
-                      <Card card={card} dim size="md" />
+                      <Card card={card} dim />
                     </m.div>
                   ))}
                 </div>

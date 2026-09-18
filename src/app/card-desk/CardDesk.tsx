@@ -124,9 +124,9 @@ export default function CardDesk() {
   const future = quote?.future ?? null;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
       {/* ── left: the shoe, the drawn cards, the board ─────────────────── */}
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
         {/* headline numbers */}
         <div className="card-soft p-5 grid gap-4 sm:grid-cols-3">
           <Stat label="future (expected sum)" value={future === null ? "—" : future.toFixed(2)} accent />
@@ -242,7 +242,7 @@ export default function CardDesk() {
       </div>
 
       {/* ── right: the game's parameters ────────────────────────────────── */}
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
         <div className="card-soft p-5">
           <p className="font-mono text-fluid-xs text-secondary tracking-wide mb-4">{"// game"}</p>
 

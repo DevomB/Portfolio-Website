@@ -149,8 +149,8 @@ export default function Counterexample() {
   const stopMessage = data?.stop_error ? data.stop_error.replace(/^Invariant_violation:\s*/, "") : null;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-      <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="min-w-0 space-y-6">
         {/* ── timeline ── */}
         <div className={`card-soft p-4 transition-opacity ${pendingRun ? "opacity-70" : ""}`}>
           <div className="flex flex-wrap items-baseline justify-between gap-2 px-1 pb-2">
@@ -221,7 +221,8 @@ export default function Counterexample() {
         {step && (
           <div className={`card-soft p-4 transition-opacity ${pendingRun ? "opacity-70" : ""}`}>
             <p className="font-mono text-fluid-xs text-muted px-1 pb-2">state after step {step.index + 1} · from the runtime&apos;s snapshot · changed cells highlighted</p>
-            <div className="grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+              <div className="overflow-x-auto">
               <table className="w-full font-mono text-[0.66rem]">
                 <thead><tr className="text-left text-muted"><th className="px-1 py-1 font-normal">account</th><th className="px-1 py-1 font-normal text-right">balance</th><th className="px-1 py-1 font-normal text-right">on hold</th></tr></thead>
                 <tbody>
@@ -239,6 +240,8 @@ export default function Counterexample() {
                   <tr className="border-t border-border/60 text-muted"><td className="px-1 py-1">minted</td><td className="px-1 py-1 text-right tabular-nums" colSpan={2}>{fmt(step.state.minted)}</td></tr>
                 </tbody>
               </table>
+              </div>
+              <div className="overflow-x-auto">
               <table className="w-full font-mono text-[0.66rem]">
                 <thead><tr className="text-left text-muted"><th className="px-1 py-1 font-normal">payment</th><th className="px-1 py-1 font-normal">route</th><th className="px-1 py-1 font-normal text-right">authorized</th><th className="px-1 py-1 font-normal text-right">captured</th><th className="px-1 py-1 font-normal text-right">refunded</th><th className="px-1 py-1 font-normal"></th></tr></thead>
                 <tbody>
@@ -259,6 +262,7 @@ export default function Counterexample() {
                   {Object.keys(step.state.payments).length === 0 && <tr><td className="px-1 py-1 text-muted/70" colSpan={6}>no payments yet</td></tr>}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         )}
@@ -279,12 +283,19 @@ export default function Counterexample() {
                 {minimize.data.original} → {minimize.data.minimized.length} commands
                 <span className="ml-2 font-mono text-fluid-xs font-normal text-muted">{minimize.data.attempts} candidate runs · {minimize.ms} ms</span>
               </p>
-              <div className="mt-2 flex h-8 items-end gap-[2px]" aria-label="candidate lengths tried, in order; green ones still failed">
-                {minimize.data.log.map((l, i) => (
-                  <span key={i} title={`${l.length} commands · ${l.fails ? "still fails" : "passes"}`} className="w-[3px] rounded-t-[1px]"
-                        style={{ height: `${Math.max(8, (l.length / minimize.data.original) * 100)}%`, background: l.fails ? "var(--color-secondary)" : "rgb(var(--brand-purple-rgb) / 0.35)" }} />
-                ))}
-              </div>
+              {/* one 3-of-5 unit bar per candidate; the strip squeezes to fit
+                  its card instead of pushing the page wide on a long log */}
+              <svg viewBox={`0 0 ${minimize.data.log.length * 5} 32`} preserveAspectRatio="none" className="mt-2 block h-8 w-full"
+                   style={{ maxWidth: minimize.data.log.length * 5 }} role="img" aria-label="candidate lengths tried, in order; green ones still failed">
+                {minimize.data.log.map((l, i) => {
+                  const h = 32 * Math.max(0.08, l.length / minimize.data.original);
+                  return (
+                    <rect key={i} x={i * 5} y={32 - h} width={3} height={h} fill={l.fails ? "var(--color-secondary)" : "rgb(var(--brand-purple-rgb) / 0.35)"}>
+                      <title>{`${l.length} commands · ${l.fails ? "still fails" : "passes"}`}</title>
+                    </rect>
+                  );
+                })}
+              </svg>
               <p className="mt-1 font-mono text-[0.58rem] text-muted/70">each bar is one candidate Ananke replayed: height is its length, green still trips {minimize.data.error.split(":")[1]?.trim() ?? "the invariant"} · half-cuts first, then single drops</p>
               <ol className="mt-3 space-y-0.5">
                 {minimize.data.minimized.map((c, i) => (
@@ -341,7 +352,7 @@ export default function Counterexample() {
       </div>
 
       {/* ── verdict + controls ── */}
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
         <div className="card-soft p-5">
           <p className="font-mono text-fluid-xs text-muted">the run</p>
           <p className={`mt-2 font-sans text-[2.2rem] font-bold leading-none tracking-tight ${!data ? "text-muted/40" : stoppedAt !== null ? "text-danger" : "text-ink"}`}>

@@ -185,8 +185,8 @@ export default function Mirage() {
   const worldLabel = (k: WorldKind, s: number) => (k === "noise" ? "noise" : `${WORLDS.find((w) => w.key === k)!.label}, φ = ${phiOf(k, s).toFixed(2)}`);
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-      <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="min-w-0 space-y-6">
         {/* ── the grid ── */}
         <div className="card-soft p-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2 px-1 pb-2">
@@ -274,7 +274,7 @@ export default function Mirage() {
       </div>
 
       {/* ── verdict + controls ── */}
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
         <div className="card-soft p-5">
           <p className="font-mono text-fluid-xs text-muted">the in-sample peak, held out</p>
           <p className={`mt-2 font-sans text-[2.4rem] font-bold leading-none tracking-tight ${result ? (result.holdout.peak.pnl < 0 ? "text-danger" : "text-ink") : "text-muted/40"}`}>

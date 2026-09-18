@@ -102,8 +102,8 @@ export default function AdversarialTape() {
   const set = (k: keyof Required<ArenaParams>, v: number) => setParams((p) => ({ ...p, [k]: v }));
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-      <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="min-w-0 space-y-6">
         {/* tape */}
         <div className="card-soft p-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2 px-1 pb-2">
@@ -134,7 +134,8 @@ export default function AdversarialTape() {
           {worlds.length === 0 ? (
             <p className="mt-2 px-1 font-mono text-[0.62rem] text-muted/70">none yet — the leaderboard fills as attacks finish</p>
           ) : (
-            <table className="mt-2 w-full font-mono text-[0.66rem]">
+            <div className="mt-2 overflow-x-auto">
+            <table className="w-full font-mono text-[0.66rem]">
               <thead><tr className="text-left text-muted"><th className="px-1 py-1 font-normal">#</th><th className="px-1 py-1 font-normal">strategy</th><th className="px-1 py-1 font-normal text-right">original</th><th className="px-1 py-1 font-normal text-right">worst</th><th className="px-1 py-1 font-normal text-right">damage</th><th className="px-1 py-1 font-normal">tape</th></tr></thead>
               <tbody>
                 {worlds.map((w, i) => (
@@ -151,6 +152,7 @@ export default function AdversarialTape() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
           {viewing && (
             <button type="button" onClick={() => setViewing(null)} className="mt-2 px-1 font-mono text-[0.62rem] text-muted hover:text-ink transition-colors">← back to the live run</button>
@@ -159,7 +161,7 @@ export default function AdversarialTape() {
       </div>
 
       {/* controls + verdict */}
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
         <div className="card-soft p-5">
           <p className="font-mono text-fluid-xs text-muted">worst P&amp;L found</p>
           <p className={`mt-2 font-sans text-[2.6rem] font-bold leading-none tracking-tight ${shownWorst ? (shownWorst.pnl < 0 ? "text-danger" : "text-ink") : "text-muted/40"}`}>

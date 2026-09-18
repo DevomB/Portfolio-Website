@@ -118,9 +118,9 @@ export default function Landscape() {
     : "";
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
       {/* ── terrain ── */}
-      <div className="card-soft p-3 sm:p-4">
+      <div className="card-soft min-w-0 p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-2">
           <p className="font-mono text-fluid-xs text-muted">
             equity vs{" "}
@@ -179,7 +179,7 @@ export default function Landscape() {
       </div>
 
       {/* ── controls ── */}
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
         <BoardPicker board={board} onChange={setBoard} variant="streets" />
         <div className={opponent === "range" ? "" : "opacity-60"}>
           <RangePainter
