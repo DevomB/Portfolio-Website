@@ -202,6 +202,28 @@ ancestor's opacity, over its real background stack.
   either side of the tie. Playing cards keep a solid white face under their
   sheen, so they are measured against white.
 
+### One composition, scaled (the root size)
+`html { font-size: clamp(100%, 1vw, 175%) }` in `globals.css`. Up to a 1600px
+viewport the root is the visitor's default (16px); above it the root is 1vw,
+and at 2800px it stops at 1.75×. 1600 is the width at which the 76rem shell
+fills 76% of the window — the composition Devom reviews — so every wider
+screen shows that same composition, bigger, instead of the page floating in
+black bands. The floor is `100%`, not `16px`, so a visitor who set a larger
+browser font keeps it.
+
+That only holds if everything is sized in rem:
+- **Layout in rem.** Grid tracks, sidebars, max-widths, gaps, card sizes and
+  radii are rem (`grid-cols-[minmax(0,1fr)_18.75rem]`, never `_300px`); text
+  is a `text-fluid-*` size or rem, never px. The one px values that stay px
+  are 1px hairlines, borders and shadows.
+- **px-drawn graphics take the root from `useRem()`** in `(chrome)`: a chart
+  that draws in CSS px (the Pallas line chart, the Mirage heat map and noise
+  strip, the terrain's labels) multiplies its fixed sizes by `rem / 16`, so an
+  11px label stays 0.6875rem. The splash fits at the page's own scale.
+- **Form controls** use `<Slider>` (`.slider`) and `.check`: native inputs
+  drawn as Chromium draws them with the accent — the same look at 16px — but
+  sized in rem, so they scale too.
+
 ## 3. Typography
 
 Five families, one role each, all self-hosted at build time via
