@@ -17,6 +17,10 @@ const CARD_H = 74;
 const RING_R = 250;   // canvas centre → card centre; sized so 52 cards at ~30px
                       // pitch overlap like a properly spread deck, corner indices clear
 const LIFT = 26;      // extra radius for a card pulled out of the fan
+/** centre → the lowest edge a card can reach: a pulled-out card at 6 o'clock */
+const UNDER_RING = RING_R + LIFT + CARD_H / 2;
+/** The composition's scale in this viewport: all of BOX, with 16px beside it and 24px above and below. */
+const fitScale = () => Math.min(1, (window.innerWidth - 32) / BOX, (window.innerHeight - 48) / BOX);
 const REVEAL_COUNT = 5;
 
 const STEP_DEG = 360 / COUNT;  // angular gap between neighbours in the closed ring
@@ -317,14 +321,24 @@ export default function Splash({ onComplete }: { onComplete: () => void }) {
   // drag cannot re-render 80-odd motion components per resize event. React never
   // writes this style key itself (it isn't in the JSX), so the imperative value
   // survives every React commit. Layout effect: measured before first paint.
+  //
+  // Scaled below 1, the 11px subtitle would render under 11px (about 6px on a
+  // phone), so on a small screen it and the hand label leave the composition
+  // and sit, at the 11px label size, just under the ring's lowest card. The
+  // name stays in the ring. `compact` only flips when the scale crosses 1.
+  const [compact, setCompact] = useState(() => fitScale() < 1);
+  const underRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const fit = () => {
-      const s = Math.min(1, (window.innerWidth - 32) / BOX, (window.innerHeight - 48) / BOX);
+      const s = fitScale();
       if (boxRef.current) boxRef.current.style.transform = `scale(${s})`;
+      if (underRef.current) underRef.current.style.top = `calc(50% + ${Math.round(UNDER_RING * s) + 14}px)`;
+      return s;
     };
     fit();
-    window.addEventListener("resize", fit);
-    return () => window.removeEventListener("resize", fit);
+    const onResize = () => setCompact(fit() < 1);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   // Clock the hand-off from the moment the intro is actually released, not from
@@ -354,6 +368,44 @@ export default function Splash({ onComplete }: { onComplete: () => void }) {
   // MORE violent motion than the intro it replaces, the opposite of the request.
   const t = (delay: number, duration: number, curve = easeOut) =>
     reduce ? { delay: 0, duration: 0 } : { delay, duration, ease: curve };
+
+  // the two lines under the name: inside the ring on a desk, under it on a
+  // phone (see `compact`) — same colours, tracking and reveal either way
+  const subtitle = (
+    <m.p
+      className="font-mono whitespace-nowrap"
+      style={{ fontSize: compact ? "var(--text-xs)" : 11, marginTop: compact ? 0 : 10, color: "var(--color-muted)", letterSpacing: "0.14em" }}
+      initial={reduce ? false : { opacity: 0, y: 4 }}
+      animate={go ? { opacity: 1, y: 0 } : { opacity: 0, y: 4 }}
+      transition={t(NAME_AT + 0.15, 0.6)}
+    >
+      TRADER · ENGINEER · RESEARCHER
+    </m.p>
+  );
+  // the dealt hand, named as the last flip settles — this is the intro's
+  // payoff line, so it reads as a verdict, not a caption: bold, bigger than
+  // the subtitle, ink-white floor
+  const handLabel = (
+    <m.p
+      className="font-mono whitespace-nowrap font-bold"
+      style={{
+        fontSize: compact ? "var(--text-xs)" : 15,
+        marginTop: compact ? 8 : 18,
+        letterSpacing: "0.18em",
+        // full-strength tokens only: a pair or better is green, an
+        // ordinary deal is ink (never muted — it is still worth
+        // announcing), and a full house or better glows. The finer
+        // strength ladder is carried by GLOW_ALPHA behind the cards.
+        color: hand.tier >= 2 ? "var(--color-secondary)" : "var(--color-ink)",
+        textShadow: celebrate ? "0 0 20px rgb(var(--brand-green-rgb) / 0.55)" : undefined,
+      }}
+      initial={reduce ? false : { opacity: 0, y: 8, scale: 0.94 }}
+      animate={go ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 8, scale: 0.94 }}
+      transition={t(LABEL_AT, 0.6, settle)}
+    >
+      {celebrate ? `♠ ${hand.name.toUpperCase()} ♠` : hand.name.toUpperCase()}
+    </m.p>
+  );
 
   return (
     <m.div
@@ -589,40 +641,15 @@ export default function Splash({ onComplete }: { onComplete: () => void }) {
           >
             Devom Brahmbhatt
           </m.h1>
-          <m.p
-            className="font-mono whitespace-nowrap"
-            style={{ fontSize: 11, marginTop: 10, color: "var(--color-muted)", letterSpacing: "0.14em" }}
-            initial={reduce ? false : { opacity: 0, y: 4 }}
-            animate={go ? { opacity: 1, y: 0 } : { opacity: 0, y: 4 }}
-            transition={t(NAME_AT + 0.15, 0.6)}
-          >
-            TRADER · ENGINEER · RESEARCHER
-          </m.p>
-
-          {/* the dealt hand, named as the last flip settles — this is the
-              intro's payoff line, so it reads as a verdict, not a caption:
-              bold, bigger than the subtitle, ink-white floor. The green
-              strength ladder rides on top so color still carries meaning. */}
-          <m.p
-            className="font-mono whitespace-nowrap font-bold"
-            style={{
-              fontSize: 15,
-              marginTop: 18,
-              letterSpacing: "0.18em",
-              // full-strength tokens only: a pair or better is green, an
-              // ordinary deal is ink (never muted — it is still worth
-              // announcing), and a full house or better glows. The finer
-              // strength ladder is carried by GLOW_ALPHA behind the cards.
-              color: hand.tier >= 2 ? "var(--color-secondary)" : "var(--color-ink)",
-              textShadow: celebrate ? "0 0 20px rgb(var(--brand-green-rgb) / 0.55)" : undefined,
-            }}
-            initial={reduce ? false : { opacity: 0, y: 8, scale: 0.94 }}
-            animate={go ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 8, scale: 0.94 }}
-            transition={t(LABEL_AT, 0.6, settle)}
-          >
-            {celebrate ? `♠ ${hand.name.toUpperCase()} ♠` : hand.name.toUpperCase()}
-          </m.p>
+          {!compact && subtitle}
+          {!compact && handLabel}
         </div>
+      </div>
+
+      {/* on a small screen, the subtitle and the hand label, under the ring */}
+      <div ref={underRef} className="pointer-events-none absolute inset-x-0 flex flex-col items-center text-center" style={{ top: "50%" }}>
+        {compact && subtitle}
+        {compact && handLabel}
       </div>
 
       {/* confetti for a full house or better — canvas, mounts only when earned */}
