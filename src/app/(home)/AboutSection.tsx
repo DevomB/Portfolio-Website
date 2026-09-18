@@ -36,8 +36,16 @@ export default function AboutSection() {
             </p>
             <p>
               Lately: an event-driven backtesting engine in Rust, a deterministic
-              event runtime in OCaml, a Go engine that plays, and poker math shipped
-              as an npm package with a C++ core. Everything demoed on this site runs
+              event runtime in OCaml,{" "}
+              <a
+                href="https://gofer.devomb.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent-dim transition-colors hover:text-ink"
+              >
+                a Go engine that plays<span aria-hidden> ↗</span>
+              </a>
+              , and poker math shipped as an npm package with a C++ core. Everything demoed on this site runs
               the real thing — nothing is ported to make it fit.
             </p>
           </div>
