@@ -26,7 +26,7 @@ export default function LegalPage({
           <header className="mb-10 max-w-2xl">
             <h1 className="font-title text-fluid-4xl font-bold tracking-tight text-ink">{title}</h1>
             <p className="mt-3 text-fluid-lg text-muted">{lede}</p>
-            <p className="mt-4 font-mono text-fluid-xs text-muted opacity-60">
+            <p className="mt-4 font-mono text-fluid-xs text-muted">
               last updated {updated}
             </p>
           </header>
