@@ -27,7 +27,7 @@ export default function SideQuestsSection() {
                   src={q.image}
                   alt={q.name + " — screenshot"}
                   fill
-                  sizes="(min-width: 1280px) 38rem, (min-width: 640px) 50vw, 100vw"
+                  sizes="(min-width: 1280px) 42vw, (min-width: 640px) 50vw, 100vw"
                   className="object-cover object-top"
                 />
               </div>
