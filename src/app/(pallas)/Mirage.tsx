@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/app/(chrome)/Button";
+import { useWidth } from "@/app/(chrome)/useWidth";
 import LineChart from "./LineChart";
 import { clamp } from "@/lib/num";
+import { labelOn, oklchLuminance } from "@/lib/color";
 import { money, sharpeFmt } from "./format";
 import { useEngineWorker } from "./useEngineWorker";
 import {
@@ -22,8 +24,17 @@ const fmt = (metric: Metric, v: number) => (metric === "pnl" ? money(v) : sharpe
 // procedures: colour on the heat map marks, in the table and on the equity chart; purple is the buy-and-hold reference
 const PEAK = "#f2f2f2", PLATEAU = "#1fb14a", WALK = "#febc2e", HOLD = "#a35cff";
 
-/** sequential single-hue ramp (purple, dark→light) for a 0..1 score rank */
-const ramp = (t: number) => `oklch(${(26 + 52 * clamp(t, 0, 1)).toFixed(1)}% ${(0.12 + 0.08 * t).toFixed(3)} 300)`;
+/** sequential single-hue ramp (purple, dark→light) for a 0..1 score rank:
+ *  the fill, and the luminance its cell label is chosen against */
+const rampL = (t: number) => (26 + 52 * clamp(t, 0, 1)) / 100;
+const rampC = (t: number) => 0.12 + 0.08 * t;
+const ramp = (t: number) => `oklch(${(rampL(t) * 100).toFixed(1)}% ${rampC(t).toFixed(3)} 300)`;
+
+// The charts draw at their shown width, one unit to a pixel, so every label
+// is 11px Geist Mono: about 6.6px an advance.
+const FONT = 11;
+const ADVANCE = 6.6;
+const textWidth = (label: string) => label.length * ADVANCE;
 
 // ── the heat map ───────────────────────────────────────────────────────────
 function HeatMap({ family, grid, metric, peak, plateau, walk, hover, onHover }: {
@@ -36,9 +47,11 @@ function HeatMap({ family, grid, metric, peak, plateau, walk, hover, onHover }: 
   hover: number | null;
   onHover: (i: number | null) => void;
 }) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const W = useWidth(wrap, 760);
   const spec = FAMILIES[family];
   const { nx, ny } = gridShape(family);
-  const W = 760, L = 52, B = 30, T = 8, R = 8;
+  const L = 56, B = 34, T = 8, R = 8;
   const cw = (W - L - R) / nx;
   const ch = Math.min(46, Math.max(30, cw * 0.62));
   const H = T + ny * ch + B;
@@ -48,86 +61,105 @@ function HeatMap({ family, grid, metric, peak, plateau, walk, hover, onHover }: 
   const span = Math.max(hi - lo, 1e-9);
   const cells = gridCells(family);
   const picksAt = (i: number) => walk.filter((f) => f.pick === i).map((f) => f.fold);
+  // a narrow column shows every other x value rather than overlapping them
+  const xStep = Math.max(1, Math.ceil((Math.max(...spec.x.values.map((v) => textWidth(String(v)))) + 6) / cw));
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto select-none" role="img" aria-label={`In-sample sweep of ${cells.length} parameter sets`} onPointerLeave={() => onHover(null)}>
-      {cells.map((c) => {
-        const s = scores[c.index];
-        const x = L + c.xi * cw, y = T + (ny - 1 - c.yi) * ch;
-        const t = s === null ? 0 : (s - lo) / span;
-        const light = t > 0.62;
-        return (
-          <g key={c.index} onPointerEnter={() => onHover(c.index)}>
-            <rect x={x + 1} y={y + 1} width={cw - 2} height={ch - 2} rx={3}
-                  fill={s === null ? "rgb(var(--brand-purple-rgb) / 0.06)" : ramp(t)}
-                  stroke={hover === c.index ? "var(--color-secondary)" : "none"} strokeWidth={1.5} />
-            {s !== null && (
-              <text x={x + cw / 2} y={y + ch / 2 + 3.5} textAnchor="middle" fontSize={cw < 60 ? 8.5 : 10} fontFamily="var(--font-mono), monospace"
-                    fill={light ? "#141414" : "rgb(255 255 255 / 0.82)"}>{metric === "pnl" ? (s >= 0 ? "+" : "−") + Math.abs(Math.round(s)).toLocaleString("en-US") : sharpeFmt(s)}</text>
-            )}
-          </g>
-        );
-      })}
-      {/* marks: peak, plateau, walk-forward folds */}
-      {cells.map((c) => {
-        const x = L + c.xi * cw, y = T + (ny - 1 - c.yi) * ch;
-        const folds = picksAt(c.index);
-        return (
-          <g key={`m${c.index}`} pointerEvents="none">
-            {plateau === c.index && <rect x={x + 2.5} y={y + 2.5} width={cw - 5} height={ch - 5} rx={3} fill="none" stroke={PLATEAU} strokeWidth={2} strokeDasharray="4 3" />}
-            {peak === c.index && <rect x={x + 2.5} y={y + 2.5} width={cw - 5} height={ch - 5} rx={3} fill="none" stroke={PEAK} strokeWidth={2} />}
-            {folds.length > 0 && (
-              <g>
-                <rect x={x + 4} y={y + 4} width={10 + 6 * (folds.length - 1)} height={11} rx={2} fill={WALK} />
-                <text x={x + 9 + 3 * (folds.length - 1)} y={y + 12.5} textAnchor="middle" fontSize={8.5} fontWeight={700} fontFamily="var(--font-mono), monospace" fill="#141414">{folds.join("")}</text>
-              </g>
-            )}
-          </g>
-        );
-      })}
-      {/* axes */}
-      {spec.x.values.map((v, xi) => (
-        <text key={`x${xi}`} x={L + xi * cw + cw / 2} y={H - 12} textAnchor="middle" fontSize={10} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{v}</text>
-      ))}
-      <text x={L + (W - L - R) / 2} y={H - 1} textAnchor="middle" fontSize={9} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)" opacity={0.7}>{spec.x.label}</text>
-      {spec.y && spec.y.values.map((v, yi) => (
-        <text key={`y${yi}`} x={L - 8} y={T + (ny - 1 - yi) * ch + ch / 2 + 3.5} textAnchor="end" fontSize={10} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{v}</text>
-      ))}
-      {spec.y && (
-        <text x={10} y={T + (ny * ch) / 2} textAnchor="middle" fontSize={9} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)" opacity={0.7} transform={`rotate(-90 10 ${T + (ny * ch) / 2})`}>{spec.y.label}</text>
-      )}
-    </svg>
+    <div ref={wrap}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="block w-full h-auto select-none" role="img" aria-label={`In-sample sweep of ${cells.length} parameter sets`} onPointerLeave={() => onHover(null)}>
+        {cells.map((c) => {
+          const s = scores[c.index];
+          const x = L + c.xi * cw, y = T + (ny - 1 - c.yi) * ch;
+          const t = s === null ? 0 : (s - lo) / span;
+          const label = s === null ? "" : metric === "pnl" ? (s >= 0 ? "+" : "−") + Math.abs(Math.round(s)).toLocaleString("en-US") : sharpeFmt(s);
+          return (
+            <g key={c.index} onPointerEnter={() => onHover(c.index)}>
+              <rect x={x + 1} y={y + 1} width={cw - 2} height={ch - 2} rx={3}
+                    fill={s === null ? "rgb(var(--brand-purple-rgb) / 0.06)" : ramp(t)}
+                    stroke={hover === c.index ? "var(--color-secondary)" : "none"} strokeWidth={1.5} />
+              {/* the value when it fits its cell; otherwise it is in the tooltip and the table */}
+              {s !== null && textWidth(label) + 8 <= cw && (
+                <text x={x + cw / 2} y={y + ch / 2 + 4} textAnchor="middle" fontSize={FONT} fontFamily="var(--font-mono), monospace"
+                      fill={labelOn(oklchLuminance(rampL(t), rampC(t), 300))}>{label}</text>
+              )}
+            </g>
+          );
+        })}
+        {/* marks: peak, plateau, walk-forward folds */}
+        {cells.map((c) => {
+          const x = L + c.xi * cw, y = T + (ny - 1 - c.yi) * ch;
+          const folds = picksAt(c.index);
+          const badge = textWidth(folds.join("")) + 6;
+          return (
+            <g key={`m${c.index}`} pointerEvents="none">
+              {plateau === c.index && <rect x={x + 2.5} y={y + 2.5} width={cw - 5} height={ch - 5} rx={3} fill="none" stroke={PLATEAU} strokeWidth={2} strokeDasharray="4 3" />}
+              {peak === c.index && <rect x={x + 2.5} y={y + 2.5} width={cw - 5} height={ch - 5} rx={3} fill="none" stroke={PEAK} strokeWidth={2} />}
+              {folds.length > 0 && (badge + 8 <= cw ? (
+                <g>
+                  <rect x={x + 4} y={y + 4} width={badge} height={14} rx={2} fill={WALK} />
+                  <text x={x + 4 + badge / 2} y={y + 15} textAnchor="middle" fontSize={FONT} fontWeight={700} fontFamily="var(--font-mono), monospace" fill="#141414">{folds.join("")}</text>
+                </g>
+              ) : (
+                <rect x={x + 4} y={y + 4} width={8} height={8} rx={2} fill={WALK} />
+              ))}
+            </g>
+          );
+        })}
+        {/* axes */}
+        {spec.x.values.map((v, xi) => xi % xStep === 0 && (
+          <text key={`x${xi}`} x={L + xi * cw + cw / 2} y={H - 18} textAnchor="middle" fontSize={FONT} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{v}</text>
+        ))}
+        <text x={L + (W - L - R) / 2} y={H - 3} textAnchor="middle" fontSize={FONT} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{spec.x.label}</text>
+        {spec.y && spec.y.values.map((v, yi) => (
+          <text key={`y${yi}`} x={L - 8} y={T + (ny - 1 - yi) * ch + ch / 2 + 4} textAnchor="end" fontSize={FONT} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{v}</text>
+        ))}
+        {spec.y && (
+          <text x={10} y={T + (ny * ch) / 2} textAnchor="middle" fontSize={FONT} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)" transform={`rotate(-90 10 ${T + (ny * ch) / 2})`}>{spec.y.label}</text>
+        )}
+      </svg>
+    </div>
   );
 }
 
 // ── the noise strip ────────────────────────────────────────────────────────
 function NoiseStrip({ values, observed, metric }: { values: number[]; observed: number | null; metric: Metric }) {
-  const W = 760, H = 64, L = 16, R = 16;
+  const wrap = useRef<HTMLDivElement>(null);
+  const W = useWidth(wrap, 760);
+  const H = 70, L = 16, R = 16;
   const all = [...values, ...(observed !== null ? [observed] : [])];
-  if (all.length === 0) return <p className="font-mono text-[0.62rem] text-muted/70 px-1">shuffled worlds appear here as they finish</p>;
-  const lo = Math.min(...all), hi = Math.max(...all);
+  const lo = all.length ? Math.min(...all) : 0, hi = all.length ? Math.max(...all) : 1;
   const span = Math.max(hi - lo, 1e-9);
   const x = (v: number) => L + ((v - lo) / span) * (W - L - R);
+  // a centred label slides inward rather than running off either edge
+  const centred = (v: number, label: string) => clamp(x(v), textWidth(label) / 2 + 2, W - textWidth(label) / 2 - 2);
   const sorted = [...values].sort((a, b) => a - b);
   const median = sorted.length ? sorted[Math.floor(sorted.length / 2)]! : null;
+  const luck = median !== null ? `luck, typically ${fmt(metric, median)}` : "";
+  const mine = observed !== null ? `your peak ${fmt(metric, observed)}` : "";
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Best in-sample score in each shuffled world, against the observed best">
-      <line x1={L} x2={W - R} y1={30} y2={30} stroke="rgb(var(--brand-purple-rgb) / 0.25)" strokeWidth={1} />
-      {values.map((v, i) => (
-        <circle key={i} cx={x(v)} cy={30 + ((i % 5) - 2) * 3} r={4} fill={WALK} fillOpacity={0.55} />
-      ))}
-      {median !== null && (
-        <g>
-          <line x1={x(median)} x2={x(median)} y1={16} y2={44} stroke="var(--color-muted)" strokeWidth={1} strokeDasharray="2 3" />
-          <text x={x(median)} y={58} textAnchor="middle" fontSize={9} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">luck, typically {fmt(metric, median)}</text>
-        </g>
+    <div ref={wrap}>
+      {all.length === 0 ? (
+        <p className="px-1 font-mono text-fluid-xs text-muted">shuffled worlds appear here as they finish</p>
+      ) : (
+        <svg viewBox={`0 0 ${W} ${H}`} className="block w-full h-auto" role="img" aria-label="Best in-sample score in each shuffled world, against the observed best">
+          <line x1={L} x2={W - R} y1={34} y2={34} stroke="rgb(var(--brand-purple-rgb) / 0.25)" strokeWidth={1} />
+          {values.map((v, i) => (
+            <circle key={i} cx={x(v)} cy={34 + ((i % 5) - 2) * 3} r={4} fill={WALK} fillOpacity={0.55} />
+          ))}
+          {median !== null && (
+            <g>
+              <line x1={x(median)} x2={x(median)} y1={20} y2={48} stroke="var(--color-muted)" strokeWidth={1} strokeDasharray="2 3" />
+              <text x={centred(median, luck)} y={65} textAnchor="middle" fontSize={FONT} fontFamily="var(--font-mono), monospace" fill="var(--color-muted)">{luck}</text>
+            </g>
+          )}
+          {observed !== null && (
+            <g>
+              <line x1={x(observed)} x2={x(observed)} y1={14} y2={54} stroke={PEAK} strokeWidth={2} />
+              <text x={centred(observed, mine)} y={10} textAnchor="middle" fontSize={FONT} fontFamily="var(--font-mono), monospace" fill="var(--color-ink)">{mine}</text>
+            </g>
+          )}
+        </svg>
       )}
-      {observed !== null && (
-        <g>
-          <line x1={x(observed)} x2={x(observed)} y1={10} y2={50} stroke={PEAK} strokeWidth={2} />
-          <text x={x(observed)} y={8} textAnchor={observed > (lo + hi) / 2 ? "end" : "start"} fontSize={9} fontFamily="var(--font-mono), monospace" fill="var(--color-ink)">your peak {fmt(metric, observed)}</text>
-        </g>
-      )}
-    </svg>
+    </div>
   );
 }
 
