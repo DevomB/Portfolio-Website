@@ -609,16 +609,11 @@ export default function Splash({ onComplete }: { onComplete: () => void }) {
               fontSize: 15,
               marginTop: 18,
               letterSpacing: "0.18em",
-              // ladder aligned with GLOW_ALPHA's pairs — the floor is ink,
-              // never muted: an ordinary deal is still worth announcing
-              color:
-                hand.tier >= 6
-                  ? "var(--color-secondary)"
-                  : hand.tier >= 4
-                    ? "var(--color-secondary-dim)"
-                    : hand.tier >= 2
-                      ? "rgb(var(--brand-green-rgb) / 0.78)"
-                      : "var(--color-ink)",
+              // full-strength tokens only: a pair or better is green, an
+              // ordinary deal is ink (never muted — it is still worth
+              // announcing), and a full house or better glows. The finer
+              // strength ladder is carried by GLOW_ALPHA behind the cards.
+              color: hand.tier >= 2 ? "var(--color-secondary)" : "var(--color-ink)",
               textShadow: celebrate ? "0 0 20px rgb(var(--brand-green-rgb) / 0.55)" : undefined,
             }}
             initial={reduce ? false : { opacity: 0, y: 8, scale: 0.94 }}
@@ -644,12 +639,12 @@ export default function Splash({ onComplete }: { onComplete: () => void }) {
         className="absolute font-mono"
         style={{
           bottom: "max(1.75rem, env(safe-area-inset-bottom, 0px) + 1rem)",
-          fontSize: "0.58rem",
+          fontSize: "var(--text-xs)",
           letterSpacing: "0.16em",
           color: "var(--color-muted)",
         }}
         initial={{ opacity: 0 }}
-        animate={{ opacity: go ? 0.45 : 0 }}
+        animate={{ opacity: go ? 1 : 0 }}
         transition={t(2.0, 0.6)}
       >
         <span className="on-mouse">CLICK</span>
