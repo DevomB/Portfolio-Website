@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+// Rooted at "/" so they work from every page; on home itself Next treats
+// them as a hash-only change and the page smooth-scrolls to the section.
 const navLinks = [
-  { label: "About", href: "#about" },
-  { label: "Projects", href: "#projects" },
+  { label: "About", href: "/#about" },
+  { label: "Projects", href: "/#projects" },
 ];
 
 function LiveClock() {
