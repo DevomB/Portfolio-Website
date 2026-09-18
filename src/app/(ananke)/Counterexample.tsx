@@ -19,7 +19,7 @@ const INVARIANTS: { name: string; means: string }[] = [
 ];
 const LENGTHS = [20, 40, 80];
 const fmt = (n: number) => n.toLocaleString("en-US");
-const kindColor: Record<string, string> = { Open_account: "var(--color-muted)", Authorize: "var(--color-accent-dim)", Capture: "var(--color-secondary-dim)", Refund: "var(--color-warn)", Void: "var(--color-danger)" };
+const kindColor: Record<string, string> = { Open_account: "var(--color-muted)", Authorize: "var(--color-accent-dim)", Capture: "var(--color-secondary)", Refund: "var(--color-warn)", Void: "var(--color-danger)" };
 
 type Alt = { key: string; label: string; domain: Domain; baseline: string[]; alternate: string[]; note: string };
 
@@ -155,7 +155,7 @@ export default function Counterexample() {
         <div className={`card-soft p-4 transition-opacity ${pendingRun ? "opacity-70" : ""}`}>
           <div className="flex flex-wrap items-baseline justify-between gap-2 px-1 pb-2">
             <p className="font-mono text-fluid-xs text-muted">trace · {steps.length} commands recorded · click a step, or use ← →</p>
-            <p className="font-mono text-[0.6rem] text-muted/70">{data ? `${fmt(data.events)} events · replay ${data.replay_ok ? "verified identical" : "DIVERGED"} · ${run!.ms} ms` : "recording…"}</p>
+            <p className="font-mono text-fluid-xs text-muted">{data ? `${fmt(data.events)} events · replay ${data.replay_ok ? "verified identical" : "DIVERGED"} · ${run!.ms} ms` : "recording…"}</p>
           </div>
           <div className="flex flex-wrap gap-[3px] px-1">
             {steps.map((s) => {
@@ -180,32 +180,32 @@ export default function Counterexample() {
               );
             })}
           </div>
-          <p className="mt-2 px-1 font-mono text-[0.58rem] text-muted/70">
+          <p className="mt-2 px-1 font-mono text-fluid-xs text-muted">
             <span style={{ color: kindColor.Authorize }}>authorize</span> · <span style={{ color: kindColor.Capture }}>capture</span> · <span style={{ color: kindColor.Refund }}>refund</span> · <span style={{ color: kindColor.Void }}>void</span> · amber: a redelivered command · red: an invariant broke · dimmed: after the stop, shown for context
           </p>
 
           {step && (
             <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               <div>
-                <p className="font-mono text-[0.6rem] text-muted">step {step.index + 1}{stoppedAt === step.index ? " · the runtime stops here" : ""}</p>
+                <p className="font-mono text-fluid-xs text-muted">step {step.index + 1}{stoppedAt === step.index ? " · the runtime stops here" : ""}</p>
                 <p className="mt-1 break-all font-mono text-[0.72rem] text-ink" style={{ color: violated.length ? "var(--color-danger)" : undefined }}>{step.command}</p>
-                <p className="mt-2 font-mono text-[0.6rem] text-muted">emitted</p>
+                <p className="mt-2 font-mono text-fluid-xs text-muted">emitted</p>
                 <ul className="mt-0.5 space-y-0.5">
-                  {step.events.map((e, i) => <li key={i} className="break-all font-mono text-[0.68rem] text-ink">{e}</li>)}
-                  {step.events.length === 0 && <li className="font-mono text-[0.68rem] text-muted/70">nothing</li>}
+                  {step.events.map((e, i) => <li key={i} className="break-all font-mono text-fluid-xs text-ink">{e}</li>)}
+                  {step.events.length === 0 && <li className="font-mono text-fluid-xs text-muted">nothing</li>}
                 </ul>
-                <p className="mt-2 font-mono text-[0.6rem] text-muted">what changed</p>
+                <p className="mt-2 font-mono text-fluid-xs text-muted">what changed</p>
                 <ul className="mt-0.5 space-y-0.5">
-                  {readable.map((c, i) => <li key={i} className="font-mono text-[0.68rem] text-ink">{c}</li>)}
-                  {readable.length === 0 && <li className="font-mono text-[0.68rem] text-muted/70">nothing</li>}
+                  {readable.map((c, i) => <li key={i} className="font-mono text-fluid-xs text-ink">{c}</li>)}
+                  {readable.length === 0 && <li className="font-mono text-fluid-xs text-muted">nothing</li>}
                 </ul>
-                <p className="mt-1 font-mono text-[0.58rem] text-muted/70">Ananke&apos;s structural diff: {step.changes.length} change{step.changes.length === 1 ? "" : "s"} by path</p>
+                <p className="mt-1 font-mono text-fluid-xs text-muted">Ananke&apos;s structural diff: {step.changes.length} change{step.changes.length === 1 ? "" : "s"} by path</p>
               </div>
               <div>
-                <p className="font-mono text-[0.6rem] text-muted">invariants after this step</p>
+                <p className="font-mono text-fluid-xs text-muted">invariants after this step</p>
                 <ul className="mt-1 space-y-1">
                   {step.checks.map((c) => (
-                    <li key={c.name} className="font-mono text-[0.66rem]">
+                    <li key={c.name} className="font-mono text-fluid-xs">
                       <span className="mr-1.5 inline-block h-2 w-2 rounded-full align-middle" style={{ background: c.ok ? "var(--color-secondary)" : "var(--color-danger)" }} />
                       <span className={c.ok ? "text-ink" : "text-danger"}>{c.name}</span>
                       {c.message && <span className="block pl-3.5 text-muted">{c.message}</span>}
@@ -223,7 +223,7 @@ export default function Counterexample() {
             <p className="font-mono text-fluid-xs text-muted px-1 pb-2">state after step {step.index + 1} · from the runtime&apos;s snapshot · changed cells highlighted</p>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
               <div className="overflow-x-auto">
-              <table className="w-full font-mono text-[0.66rem]">
+              <table className="w-full font-mono text-fluid-xs">
                 <thead><tr className="text-left text-muted"><th className="px-1 py-1 font-normal">account</th><th className="px-1 py-1 font-normal text-right">balance</th><th className="px-1 py-1 font-normal text-right">on hold</th></tr></thead>
                 <tbody>
                   {Object.entries(step.state.accounts).map(([name, a]) => {
@@ -242,7 +242,7 @@ export default function Counterexample() {
               </table>
               </div>
               <div className="overflow-x-auto">
-              <table className="w-full font-mono text-[0.66rem]">
+              <table className="w-full font-mono text-fluid-xs">
                 <thead><tr className="text-left text-muted"><th className="px-1 py-1 font-normal">payment</th><th className="px-1 py-1 font-normal">route</th><th className="px-1 py-1 font-normal text-right">authorized</th><th className="px-1 py-1 font-normal text-right">captured</th><th className="px-1 py-1 font-normal text-right">refunded</th><th className="px-1 py-1 font-normal"></th></tr></thead>
                 <tbody>
                   {Object.entries(step.state.payments).map(([id, p]) => {
@@ -259,7 +259,7 @@ export default function Counterexample() {
                       </tr>
                     );
                   })}
-                  {Object.keys(step.state.payments).length === 0 && <tr><td className="px-1 py-1 text-muted/70" colSpan={6}>no payments yet</td></tr>}
+                  {Object.keys(step.state.payments).length === 0 && <tr><td className="px-1 py-1 text-muted" colSpan={6}>no payments yet</td></tr>}
                 </tbody>
               </table>
               </div>
@@ -272,11 +272,11 @@ export default function Counterexample() {
           <div className="flex flex-wrap items-center justify-between gap-2 px-1">
             <p className="font-mono text-fluid-xs text-muted">minimize · shrink the failing scenario to a minimal reproduction</p>
             <button type="button" onClick={doMinimize} disabled={!data || stoppedAt === null || minimizing || pendingRun}
-                    className="chip-soft px-3 py-1 font-mono text-[0.62rem] text-ink disabled:opacity-40 hover:border-accent/40 transition-colors">
+                    className="chip-soft px-3 py-1 font-mono text-fluid-xs text-ink disabled:opacity-40 hover:border-accent/40 transition-colors">
               {minimizing ? "shrinking…" : minimize ? "shrink again" : "minimize"}
             </button>
           </div>
-          {stoppedAt === null && data && <p className="mt-2 px-1 font-mono text-[0.62rem] text-muted/70">nothing to minimize — this run breaks no invariant</p>}
+          {stoppedAt === null && data && <p className="mt-2 px-1 font-mono text-fluid-xs text-muted">nothing to minimize — this run breaks no invariant</p>}
           {minimize && (
             <div className="mt-3 px-1">
               <p className="font-sans text-fluid-lg font-semibold leading-none text-ink">
@@ -296,15 +296,15 @@ export default function Counterexample() {
                   );
                 })}
               </svg>
-              <p className="mt-1 font-mono text-[0.58rem] text-muted/70">each bar is one candidate Ananke replayed: height is its length, green still trips {minimize.data.error.split(":")[1]?.trim() ?? "the invariant"} · half-cuts first, then single drops</p>
+              <p className="mt-1 font-mono text-fluid-xs text-muted">each bar is one candidate Ananke replayed: height is its length, green still trips {minimize.data.error.split(":")[1]?.trim() ?? "the invariant"} · half-cuts first, then single drops</p>
               <ol className="mt-3 space-y-0.5">
                 {minimize.data.minimized.map((c, i) => (
-                  <li key={i} className="break-all font-mono text-[0.68rem]" style={{ color: i === minimize.data.minimized.length - 1 ? "var(--color-danger)" : kindColor[commandKind(c)] ?? "var(--color-ink)" }}>
+                  <li key={i} className="break-all font-mono text-fluid-xs" style={{ color: i === minimize.data.minimized.length - 1 ? "var(--color-danger)" : kindColor[commandKind(c)] ?? "var(--color-ink)" }}>
                     <span className="mr-2 text-muted">{i + 1}</span>{c}
                   </li>
                 ))}
               </ol>
-              <p className="mt-2 font-mono text-[0.58rem] text-muted/70">
+              <p className="mt-2 font-mono text-fluid-xs text-muted">
                 a candidate counts as still failing when the same invariant breaks; commands that only make sense in pairs (an authorize and its void) survive a single-drop pass, so the result is small, not always the smallest
               </p>
             </div>
@@ -317,33 +317,33 @@ export default function Counterexample() {
           <div className="mt-2 flex flex-wrap gap-1.5 px-1">
             {alts.map((a) => (
               <button key={a.key} type="button" onClick={() => doBranch(a)} disabled={!!branching || pendingRun}
-                      className={`chip-soft px-2.5 py-1 font-mono text-[0.62rem] transition-colors disabled:opacity-40 ${branch?.alt.key === a.key ? "border-accent/60 text-ink" : "text-muted hover:text-ink hover:border-accent/40"}`}>
+                      className={`chip-soft px-2.5 py-1 font-mono text-fluid-xs transition-colors disabled:opacity-40 ${branch?.alt.key === a.key ? "border-accent/60 text-ink" : "text-muted hover:text-ink hover:border-accent/40"}`}>
                 {branching === a.key ? "forking…" : a.label}
               </button>
             ))}
-            {alts.length === 0 && <span className="font-mono text-[0.62rem] text-muted/70">nothing to fork — this run breaks no invariant</span>}
+            {alts.length === 0 && <span className="font-mono text-fluid-xs text-muted">nothing to fork — this run breaks no invariant</span>}
           </div>
           {branch && (
             <div className="mt-3 px-1">
-              <p className="font-mono text-[0.62rem] text-muted">{branch.alt.note} · restored from the snapshot after step {branch.data.forked_after} · {branch.ms} ms</p>
+              <p className="font-mono text-fluid-xs text-muted">{branch.alt.note} · restored from the snapshot after step {branch.data.forked_after} · {branch.ms} ms</p>
               <div className="mt-2 grid gap-3 sm:grid-cols-2">
                 {(["baseline", "alternate"] as const).map((side) => {
                   const s = branch.data[side];
                   return (
                     <div key={side} className="rounded-md border border-border px-3 py-2">
-                      <p className="font-mono text-[0.6rem] text-muted">{side === "baseline" ? "as recorded" : "the alternate future"}{branch.alt.domain === "fixed" ? " · fixed domain" : ""}</p>
-                      <p className="mt-1 font-sans text-fluid-lg font-semibold leading-tight" style={{ color: s.violations.length ? "var(--color-danger)" : "var(--color-secondary-dim)" }}>
+                      <p className="font-mono text-fluid-xs text-muted">{side === "baseline" ? "as recorded" : "the alternate future"}{branch.alt.domain === "fixed" ? " · fixed domain" : ""}</p>
+                      <p className="mt-1 font-sans text-fluid-lg font-semibold leading-tight" style={{ color: s.violations.length ? "var(--color-danger)" : "var(--color-secondary)" }}>
                         {s.violations.length ? `${s.violations.length} violation${s.violations.length > 1 ? "s" : ""}` : "every invariant holds"}
                       </p>
-                      {s.violations.slice(0, 2).map((v, i) => <p key={i} className="mt-0.5 font-mono text-[0.6rem] text-muted">{v.message ?? v.name}</p>)}
+                      {s.violations.slice(0, 2).map((v, i) => <p key={i} className="mt-0.5 font-mono text-fluid-xs text-muted">{v.message ?? v.name}</p>)}
                     </div>
                   );
                 })}
               </div>
-              <p className="mt-3 font-mono text-[0.6rem] text-muted">{branch.data.diverged ? `the two futures diverge · Ananke's structural diff: ${branch.data.changes.length} changes` : "the two futures end in the same state"}</p>
+              <p className="mt-3 font-mono text-fluid-xs text-muted">{branch.data.diverged ? `the two futures diverge · Ananke's structural diff: ${branch.data.changes.length} changes` : "the two futures end in the same state"}</p>
               {branch.data.baseline.state && branch.data.alternate.state && (
                 <ul className="mt-1 space-y-0.5">
-                  {describeChanges(branch.data.baseline.state, branch.data.alternate.state).map((c, i) => <li key={i} className="font-mono text-[0.66rem] text-ink">{c}</li>)}
+                  {describeChanges(branch.data.baseline.state, branch.data.alternate.state).map((c, i) => <li key={i} className="font-mono text-fluid-xs text-ink">{c}</li>)}
                 </ul>
               )}
             </div>
@@ -355,23 +355,23 @@ export default function Counterexample() {
       <div className="min-w-0 space-y-6">
         <div className="card-soft p-5">
           <p className="font-mono text-fluid-xs text-muted">the run</p>
-          <p className={`mt-2 font-sans text-[2.2rem] font-bold leading-none tracking-tight ${!data ? "text-muted/40" : stoppedAt !== null ? "text-danger" : "text-ink"}`}>
+          <p className={`mt-2 font-sans text-[2.2rem] font-bold leading-none tracking-tight ${!data ? "text-muted" : stoppedAt !== null ? "text-danger" : "text-ink"}`}>
             {!data ? "—" : stoppedAt !== null ? `stopped at ${stoppedAt + 1}` : `${steps.length} clean`}
           </p>
           {data && (
-            <p className="mt-2 font-mono text-[0.64rem] leading-relaxed text-muted">
+            <p className="mt-2 font-mono text-fluid-xs leading-relaxed text-muted">
               {stoppedAt !== null ? <>of {steps.length} commands · <span className="text-ink">{stopMessage}</span></> : <>commands, every invariant held throughout{domain === "fixed" ? " — this is the fixed domain" : ""}</>}
             </p>
           )}
-          {data?.rejected && <p className="mt-2 font-mono text-[0.62rem] text-warn">command {data.rejected.index + 1} rejected: {data.rejected.error}</p>}
-          {error && <p className="mt-3 font-mono text-[0.62rem] text-danger break-words">{error}</p>}
-          <p className="mt-4 font-mono text-[0.6rem] leading-relaxed text-muted/70">
+          {data?.rejected && <p className="mt-2 font-mono text-fluid-xs text-warn">command {data.rejected.index + 1} rejected: {data.rejected.error}</p>}
+          {error && <p className="mt-3 font-mono text-fluid-xs text-danger break-words">{error}</p>}
+          <p className="mt-4 font-mono text-fluid-xs leading-relaxed text-muted">
             {engine ?? "ananke"} · OCaml 5.2 → js_of_ocaml · runs in this tab · {domain === "buggy" ? "buggy domain" : "fixed domain"} · seed {seed}
           </p>
         </div>
 
         <div className="card-soft p-5 space-y-4">
-          <div className="grid grid-cols-2 gap-x-3 gap-y-2 font-mono text-[0.66rem]">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2 font-mono text-fluid-xs">
             <label className="text-muted">scenario seed
               <div className="mt-1 flex gap-1">
                 <input type="number" value={seed} onChange={(e) => setSeed(+e.target.value)} className="w-full rounded border border-border bg-surface px-2 py-1 text-ink" />
@@ -389,12 +389,12 @@ export default function Counterexample() {
             <div className="grid grid-cols-2 gap-1.5">
               {(["buggy", "fixed"] as Domain[]).map((d) => (
                 <button key={d} type="button" onClick={() => setDomain(d)}
-                        className={`rounded-md px-2 py-1.5 text-left font-mono text-[0.66rem] transition-colors ${domain === d ? "bg-accent-bg text-accent-dim" : "text-muted hover:text-ink hover:bg-surface"}`}>
+                        className={`rounded-md px-2 py-1.5 text-left font-mono text-fluid-xs transition-colors ${domain === d ? "bg-accent-bg text-accent-dim" : "text-muted hover:text-ink hover:bg-surface"}`}>
                   {d === "buggy" ? "as shipped" : "fixed"}
                 </button>
               ))}
             </div>
-            <p className="mt-2 font-mono text-[0.6rem] text-muted/70 leading-relaxed">
+            <p className="mt-2 font-mono text-fluid-xs text-muted leading-relaxed">
               {domain === "buggy"
                 ? "the bug: voiding a payment releases its whole authorization, forgetting the part already captured and paid to the payee"
                 : "the fix: a void releases only what is still on hold"}
@@ -406,13 +406,13 @@ export default function Counterexample() {
           <p className="font-mono text-fluid-xs text-muted">what must always be true</p>
           <ul className="mt-2 space-y-1.5">
             {INVARIANTS.map((inv) => (
-              <li key={inv.name} className="font-mono text-[0.62rem]">
+              <li key={inv.name} className="font-mono text-fluid-xs">
                 <span className="text-ink">{inv.name}</span>
-                <span className="block text-muted/80">{inv.means}</span>
+                <span className="block text-muted">{inv.means}</span>
               </li>
             ))}
           </ul>
-          <p className="mt-3 font-mono text-[0.58rem] leading-relaxed text-muted/70">
+          <p className="mt-3 font-mono text-fluid-xs leading-relaxed text-muted">
             checked by the runtime after every command. money_conserved never catches this bug — both sides of the bad release are the payer&apos;s own columns — which is why the hold ledger is an invariant of its own.
           </p>
         </div>
