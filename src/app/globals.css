@@ -151,7 +151,8 @@ body {
     max-width: 64px;
     aspect-ratio: 64 / 90;
     border-radius: 8px;
-    background: linear-gradient(160deg, var(--color-card-face) 0%, var(--color-card-face-2) 100%);
+    /* a solid face under the sheen, so contrast is measured against white */
+    background: var(--color-card-face) linear-gradient(160deg, var(--color-card-face) 0%, var(--color-card-face-2) 100%);
     container-type: inline-size;
     user-select: none;
   }

@@ -202,7 +202,7 @@ export default function CardDesk() {
                   transition={{ duration: 0.28, ease }}
                   className="relative flex h-16 w-11 items-center justify-center rounded-md font-mono text-fluid-base font-bold select-none"
                   style={{
-                    background: "linear-gradient(160deg, var(--color-card-face) 0%, var(--color-card-face-2) 100%)",
+                    background: "var(--color-card-face) linear-gradient(160deg, var(--color-card-face) 0%, var(--color-card-face-2) 100%)",
                     border: "1.5px solid var(--color-card-edge)",
                     color: "var(--color-card-black)",
                     boxShadow: "0 3px 10px rgb(var(--brand-black-rgb) / 0.6)",
