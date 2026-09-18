@@ -1,17 +1,19 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useRef, type ReactNode } from "react";
+import { axisTicks } from "./format";
 
 /* A small multi-series line chart shared by the Pallas demos, dataviz-spec:
    2px lines, hairline grid, legend with line keys, crosshair tooltip on the
-   nearest index. Colours are validated on the dark surface. */
+   nearest index. Colours are validated on the dark surface. Until a series
+   has data it draws no axis at all — just the frame and what will fill it. */
 
 export const ORIGINAL = "#a35cff";   // purple
 export const ADVERSARIAL = "#1fb14a"; // green
 export const SERIES_COLORS = [ORIGINAL, ADVERSARIAL, "#febc2e", "#f2f2f2"]; // purple, green, amber, ink
 
 export default function LineChart({
-  series, labels, height = 220, hover, onHover, format, id, colors = SERIES_COLORS, baseline,
+  series, labels, height = 220, hover, onHover, format, id, colors = SERIES_COLORS, baseline, empty,
 }: {
   series: (number[] | null)[];
   labels: string[];
@@ -23,25 +25,27 @@ export default function LineChart({
   colors?: string[];
   /** A horizontal reference (e.g. the starting balance). */
   baseline?: number;
+  /** What the frame says before any series has data. */
+  empty?: ReactNode;
 }) {
+  const ref = useRef<SVGSVGElement>(null);
   const W = 760, H = height, PAD = { t: 14, r: 16, b: 26, l: 56 };
+  if (!series.some((s) => s && s.length > 0)) {
+    return (
+      <div className="flex items-center justify-center rounded-md border border-dashed border-border px-4 text-center" style={{ aspectRatio: `${W} / ${H}` }}>
+        <p className="font-mono text-fluid-xs text-muted">{empty}</p>
+      </div>
+    );
+  }
   const pw = W - PAD.l - PAD.r, ph = H - PAD.t - PAD.b;
   const all = series.flatMap((s) => s ?? []);
   if (baseline !== undefined) all.push(baseline);
   const n = Math.max(...series.map((s) => s?.length ?? 0), 2);
-  const lo = all.length ? Math.min(...all) : 0, hi = all.length ? Math.max(...all) : 1;
+  const lo = Math.min(...all), hi = Math.max(...all);
   const span = Math.max(hi - lo, 1e-6);
   const y = (v: number) => PAD.t + ph - ((v - lo) / span) * ph;
   const x = (i: number) => PAD.l + (i / (n - 1)) * pw;
-  const ticks = useMemo(() => {
-    const raw = span / 4;
-    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
-    const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? raw;
-    const out: number[] = [];
-    for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) out.push(v);
-    return out;
-  }, [lo, hi, span]);
-  const ref = useRef<SVGSVGElement>(null);
+  const ticks = axisTicks(lo, hi, format);
   const move = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = ref.current?.getBoundingClientRect(); if (!r) return;
     const px = ((e.clientX - r.left) / r.width) * W;

@@ -225,10 +225,9 @@ export default function Mirage() {
           <LineChart id="holdout-chart" height={200}
                      series={[result?.holdout.peak.equity ?? null, result?.holdout.plateau.equity ?? null, result?.holdout.walk.equity ?? null, result?.holdout.hold.equity ?? null]}
                      labels={["peak", "plateau", "walk-forward", "buy & hold (reference)"]} colors={[PEAK, PLATEAU, WALK, HOLD]} baseline={INITIAL_BALANCE}
-                     hover={chartHover} onHover={setChartHover} format={(v) => "$" + Math.round(v).toLocaleString("en-US")} />
-          {!result
-            ? <p className="mt-2 px-1 font-mono text-[0.62rem] text-muted/70">the three picks are graded here once the sweep finishes</p>
-            : <p className="mt-2 px-1 font-mono text-[0.62rem] text-muted/70">buy &amp; hold is what simply being long made this year — a pick that cannot beat it found nothing</p>}
+                     hover={chartHover} onHover={setChartHover} format={(v) => "$" + Math.round(v).toLocaleString("en-US")}
+                     empty="the three picks are graded here once the sweep finishes" />
+          {result && <p className="mt-2 px-1 font-mono text-[0.62rem] text-muted/70">buy &amp; hold is what simply being long made this year — a pick that cannot beat it found nothing</p>}
         </div>
 
         {/* ── the noise test ── */}

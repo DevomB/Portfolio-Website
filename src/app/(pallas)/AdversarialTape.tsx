@@ -122,10 +122,8 @@ export default function AdversarialTape() {
         <div className="card-soft p-4">
           <p className="font-mono text-fluid-xs text-muted px-1 pb-2">strategy equity · on the original vs on the worst world</p>
           <LineChart id="equity-chart" series={[shownBase?.equity ?? null, shownWorst?.equity ?? null]} height={180}
-                     labels={["original", "adversarial"]} hover={hover} onHover={setHover} format={(v) => "$" + Math.round(v).toLocaleString("en-US")} />
-          {!baseline && !viewing && (
-            <p className="mt-2 px-1 font-mono text-[0.62rem] text-muted/70">attack to see the strategy&apos;s equity on both worlds</p>
-          )}
+                     labels={["original", "adversarial"]} hover={hover} onHover={setHover} format={(v) => "$" + Math.round(v).toLocaleString("en-US")}
+                     empty="attack to see the strategy's equity on both worlds" />
         </div>
 
         {/* leaderboard */}
