@@ -54,7 +54,7 @@ function Card({
         boxShadow: highlight
           ? "0 4px 16px rgba(0,0,0,0.18), 0 0 0 3px rgb(var(--brand-purple-rgb) / 0.2)"
           : "0 3px 10px rgb(var(--brand-black-rgb) / 0.6)",
-        opacity: dim ? 0.45 : 1,
+        filter: dim ? "brightness(0.75)" : undefined,
       }}
     >
       <div className="playing-card-index">{card.rank}<span>{card.suitLabel}</span></div>
@@ -188,7 +188,7 @@ export default function PokerLab() {
               </button>
             ))}
             {pendingRank && (
-              <span className="font-mono text-fluid-xs text-accent ml-1">→ pick suit for {pendingRank}</span>
+              <span className="font-mono text-fluid-xs text-accent-dim ml-1">→ pick suit for {pendingRank}</span>
             )}
           </div>
 
@@ -201,7 +201,7 @@ export default function PokerLab() {
                 style={{
                   borderColor: pendingRank === r ? "var(--color-accent)" : "var(--color-border)",
                   background: pendingRank === r ? "var(--color-accent-bg)" : "var(--color-surface-elevated)",
-                  color: pendingRank === r ? "var(--color-accent)" : "var(--color-ink)",
+                  color: pendingRank === r ? "var(--color-accent-dim)" : "var(--color-ink)",
                 }}>
                 {r}
               </button>
@@ -213,7 +213,7 @@ export default function PokerLab() {
               <button key={s.code} type="button" disabled={!pendingRank}
                 onClick={() => { if (!pendingRank) return; appendCard(pendingRank, s.code); setPendingRank(null); }}
                 className="w-12 h-12 text-xl rounded-md border border-border bg-surface-elevated transition-colors hover:border-accent/40 disabled:opacity-30 disabled:cursor-not-allowed"
-                style={{ color: s.red ? "var(--color-card-red)" : "var(--color-ink)" }}>
+                style={{ color: s.red ? "var(--color-danger)" : "var(--color-ink)" }}>
                 {s.label}
               </button>
             ))}
@@ -273,7 +273,7 @@ export default function PokerLab() {
 
         {error && (
           <p className="rounded-md border px-3 py-2 font-mono text-fluid-xs" role="alert"
-            style={{ borderColor: "rgb(200 40 58 / 0.4)", background: "rgb(200 40 58 / 0.1)", color: "var(--color-card-red)" }}>
+            style={{ borderColor: "rgb(var(--color-danger-rgb) / 0.4)", background: "rgb(var(--color-danger-rgb) / 0.1)", color: "var(--color-danger)" }}>
             {error}
           </p>
         )}
@@ -290,7 +290,7 @@ export default function PokerLab() {
             <div className="flex items-baseline justify-between gap-4">
               <dt className="text-fluid-sm text-muted">Hero equity</dt>
               <dd className="font-mono font-bold tabular-nums"
-                style={{ fontSize: "var(--text-3xl)", color: finalResult ? "var(--color-accent)" : "var(--color-muted)", opacity: finalResult ? 1 : 0.3 }}>
+                style={{ fontSize: "var(--text-3xl)", color: finalResult ? "var(--color-accent-dim)" : "var(--color-muted)" }}>
                 {finalResult ? `${finalResult.equity.toFixed(2)}%` : "—"}
               </dd>
             </div>
@@ -303,7 +303,7 @@ export default function PokerLab() {
               <>
                 <div className="flex items-baseline justify-between">
                   <dt className="font-mono text-fluid-xs text-muted">throughput</dt>
-                  <dd className="font-mono text-fluid-xs tabular-nums" style={{ color: "var(--color-accent)" }}>
+                  <dd className="font-mono text-fluid-xs tabular-nums text-accent-dim">
                     {finalResult.iterationsPerSec.toLocaleString(undefined, { maximumFractionDigits: 0 })} iter/s
                   </dd>
                 </div>
@@ -319,7 +319,7 @@ export default function PokerLab() {
             <div className="mt-5 flex items-center gap-2">
               <m.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
                 className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--color-accent)" }} />
-              <span className="font-mono text-fluid-xs text-accent">simulating…</span>
+              <span className="font-mono text-fluid-xs text-accent-dim">simulating…</span>
             </div>
           )}
         </div>
@@ -329,7 +329,7 @@ export default function PokerLab() {
 
           {/* Board row — 5 community card slots */}
           <div>
-            <p className="font-mono text-[0.6rem] text-muted/50 tracking-widest uppercase mb-3">
+            <p className="font-mono text-fluid-xs text-muted tracking-widest uppercase mb-3">
               {sampleBoard ? "sample winning board" : "board"}
             </p>
             <div className={CARD_ROW}>
@@ -353,8 +353,7 @@ export default function PokerLab() {
 
           {/* Hero row */}
           <div>
-            <p className="font-mono text-[0.6rem] tracking-widest uppercase mb-3"
-              style={{ color: "var(--color-accent)", opacity: 0.7 }}>
+            <p className="font-mono text-fluid-xs text-accent-dim tracking-widest uppercase mb-3">
               your hand
             </p>
             <div className={CARD_ROW}>
@@ -371,8 +370,7 @@ export default function PokerLab() {
                     />
                   </m.div>
                 ))}
-                {heroCards.length === 0 && <EmptySlot />}
-                {heroCards.length === 1 && <EmptySlot />}
+                {Array.from({ length: Math.max(0, 2 - heroCards.length) }, (_, i) => <EmptySlot key={`hero-open-${i}`} />)}
               </AnimatePresence>
             </div>
           </div>
@@ -386,7 +384,7 @@ export default function PokerLab() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 12 }}
                 transition={{ duration: 0.4, delay: 0.15, ease }}>
-                <p className="font-mono text-[0.6rem] text-muted/40 tracking-widest uppercase mb-3">
+                <p className="font-mono text-fluid-xs text-muted tracking-widest uppercase mb-3">
                   villain (sample run)
                 </p>
                 <div className={CARD_ROW}>
@@ -406,8 +404,8 @@ export default function PokerLab() {
           {/* Legend */}
           {sample && (
             <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.5 }}
-              className="font-mono text-[0.58rem]" style={{ color: "var(--color-muted)", opacity: 0.45 }}>
-              teal border = contributes to best hand · villain dimmed = losing
+              className="font-mono text-fluid-xs text-muted">
+              purple border = contributes to best hand · villain dimmed = losing
             </m.p>
           )}
         </div>
