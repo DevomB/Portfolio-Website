@@ -6,7 +6,7 @@ brand
 
 ## Users
 
-Potential employers, collaborators, and clients evaluating Devom Brahmbhatt as a trader, engineer, and researcher. They arrive from a job application, a GitHub link, or a referral. They are technical enough to read the stack and the SQL ghost text and understand them, but they are judging fit and craft as much as credentials.
+Potential employers, collaborators, and clients evaluating Devom Brahmbhatt as a trader, engineer, and researcher. They arrive from a job application, a GitHub link, or a referral. They are technical enough to read the stack and the server log and understand them, but they are judging fit and craft as much as credentials.
 
 Secondary: anyone curious enough to poke around the demos (PokerLab) or dig into a project page.
 
@@ -41,7 +41,7 @@ To be clarified. The user indicated none of the standard lanes (Linear/Vercel, S
 
 2. **Structure does the work.** Layout, type hierarchy, and whitespace carry the design. Color and motion are used to confirm decisions, not make them.
 
-3. **Technical personality, not technical costume.** The SQL ghost text and server log are personality — they should feel like something Devom would actually write, not a prop. If a motif feels like a Halloween costume, cut it.
+3. **Technical personality, not technical costume.** The server log is personality — it should feel like something Devom would actually write, not a prop. If a motif feels like a Halloween costume, cut it.
 
 4. **Confident restraint over loud restraint.** Bold means decisive, not busy. One committed choice beats five hedged ones. Fewer elements, stronger presence.
 
