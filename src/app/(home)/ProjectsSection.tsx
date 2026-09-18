@@ -30,9 +30,10 @@ export default function ProjectsSection() {
               <div className="flex-1 min-w-0">
                 <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between">
                   <p className="font-semibold text-fluid-sm text-ink">{p.name}</p>
+                  {/* a tag, not a second link: the whole row goes to the project page */}
                   {(p.demoPath || p.liveUrl) && (
-                    <span className="font-mono text-fluid-xs text-accent shrink-0">
-                      {p.demoPath ? "live demo ↗" : "site ↗"}
+                    <span className="font-mono text-fluid-xs text-accent-dim shrink-0">
+                      {p.demoPath ? "live demo" : "site"}
                     </span>
                   )}
                 </div>
