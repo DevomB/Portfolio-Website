@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MATRIX_RANKS, cellIndex, cellOf } from "@/app/(poker)/handMatrix";
 import { clamp } from "@/lib/num";
+import { useWidth } from "@/app/(chrome)/useWidth";
 
 /* One terrain, two surfaces. The 13×13 starting-hand matrix drawn as an
    isometric mesh: a vertex per class, height in [0, 1], triangles painted by
@@ -160,8 +161,13 @@ export default function Terrain({ target, triFill, hover, onHover, onSelect, sel
     );
   };
 
+  // the mesh scales with its card; its rank labels are held at 11px on screen
+  const frame = useRef<HTMLDivElement>(null);
+  const unitsPerPx = TERRAIN_W / useWidth(frame, TERRAIN_W);
+  const labelSize = 11 * unitsPerPx;
+
   return (
-    <div className="relative">
+    <div ref={frame} className="relative">
       <svg
         ref={svgRef}
         viewBox={`0 0 ${TERRAIN_W} ${TERRAIN_H}`}
@@ -187,9 +193,9 @@ export default function Terrain({ target, triFill, hover, onHover, onSelect, sel
         {MATRIX_RANKS.split("").map((r, i) => {
           const a = project(i, -0.9, 0), b = project(-0.9, i, 0);
           return (
-            <g key={r} fontFamily="var(--font-mono), monospace" fontSize={11} fill="var(--color-muted)">
-              <text x={a.x} y={a.y + 4} textAnchor="middle">{r}</text>
-              <text x={b.x} y={b.y + 4} textAnchor="middle">{r}</text>
+            <g key={r} fontFamily="var(--font-mono), monospace" fontSize={labelSize} fill="var(--color-muted)">
+              <text x={a.x} y={a.y + labelSize * 0.36} textAnchor="middle">{r}</text>
+              <text x={b.x} y={b.y + labelSize * 0.36} textAnchor="middle">{r}</text>
             </g>
           );
         })}

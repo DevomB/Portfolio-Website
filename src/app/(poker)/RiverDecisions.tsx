@@ -35,7 +35,7 @@ const DIALS: { key: keyof Policy; label: string; hint: string }[] = [
   { key: "foldToRaise", label: "value folds to a raise", hint: "bluffs always fold to a raise; value hands fold this often" },
 ];
 const ACTIONS: Action[] = ["fold", "call", "raise"];
-const ACTION_INK: Record<Action, string> = { fold: "var(--color-muted)", call: "var(--color-secondary-dim)", raise: "var(--color-accent-dim)" };
+const ACTION_INK: Record<Action, string> = { fold: "var(--color-muted)", call: "var(--color-secondary)", raise: "var(--color-accent-dim)" };
 const ACTION_SWATCH: Record<Action, string> = { fold: "oklch(30% 0.02 300)", call: "oklch(58% 0.17 145)", raise: "oklch(60% 0.22 300)" };
 const CATEGORY_LABEL: Record<string, string> = {
   highCard: "high card", onePair: "one pair", twoPair: "two pair", threeOfAKind: "trips", straight: "straight",
@@ -147,20 +147,40 @@ export default function RiverDecisions() {
   const combos = fr?.focus.combos ?? [];
   const combo = combos.length ? combos[Math.min(comboIx, combos.length - 1)]! : null;
 
-  let checkLines = "";
+  // the arithmetic, twice: a line per step where there is room, a term per
+  // line on a phone — either way the answer sits on its own line and never
+  // scrolls out of view
+  const checkLines = { wide: "", narrow: "" };
   if (fr && combo) {
     const { pot: P, bet: B, raiseTo: R } = fr.sizes;
     const e = combo.evs;
-    checkLines = [
-      "call  = pWin·(P+B) + pTie·P/2 − pLose·B",
-      `      = ${f3(e.pWin)}·${P + B} + ${f3(e.pTie)}·${P / 2} − ${f3(1 - e.pWin - e.pTie)}·${B} = ${chips(e.evCall)}`,
-      "raise = pFold·(P+B) + (1−pFold)·[pWin′·(P+R) + pTie′·P/2 − pLose′·R]",
-      `      = ${f3(e.pFoldToRaise)}·${P + B} + ${f3(1 - e.pFoldToRaise)}·[${f3(e.pWinIfCalled)}·${P + R} + ${f3(e.pTieIfCalled)}·${P / 2} − ${f3(1 - e.pWinIfCalled - e.pTieIfCalled)}·${R}] = ${chips(e.evRaise)}`,
+    const call = { vars: ["pWin·(P+B)", "+ pTie·P/2", "− pLose·B"], nums: [`${f3(e.pWin)}·${P + B}`, `+ ${f3(e.pTie)}·${P / 2}`, `− ${f3(1 - e.pWin - e.pTie)}·${B}`] };
+    const ifCalled = {
+      vars: ["pWin′·(P+R)", "+ pTie′·P/2", "− pLose′·R"],
+      nums: [`${f3(e.pWinIfCalled)}·${P + R}`, `+ ${f3(e.pTieIfCalled)}·${P / 2}`, `− ${f3(1 - e.pWinIfCalled - e.pTieIfCalled)}·${R}`],
+    };
+    const fold = { vars: "pFold·(P+B)", nums: `${f3(e.pFoldToRaise)}·${P + B}`, keep: ["(1−pFold)", f3(1 - e.pFoldToRaise)] };
+    checkLines.wide = [
+      `call  = ${call.vars.join(" ")}`,
+      `      = ${call.nums.join(" ")}`,
+      `      = ${chips(e.evCall)}`,
+      `raise = ${fold.vars} + ${fold.keep[0]}·[${ifCalled.vars.join(" ")}]`,
+      `      = ${fold.nums} + ${fold.keep[1]}·[${ifCalled.nums.join(" ")}]`,
+      `      = ${chips(e.evRaise)}`,
+    ].join("\n");
+    checkLines.narrow = [
+      `call  = ${call.vars[0]}`, ...call.vars.slice(1).map((t) => `      ${t}`),
+      `      = ${call.nums[0]}`, ...call.nums.slice(1).map((t) => `      ${t}`),
+      `      = ${chips(e.evCall)}`,
+      "",
+      `raise = ${fold.vars}`, `      + ${fold.keep[0]}·[`, ...ifCalled.vars.map((t, i) => `        ${i ? t : `  ${t}`}`), "        ]",
+      `      = ${fold.nums}`, `      + ${fold.keep[1]}·[`, ...ifCalled.nums.map((t, i) => `        ${i ? t : `  ${t}`}`), "        ]",
+      `      = ${chips(e.evRaise)}`,
     ].join("\n");
   }
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="min-w-0 space-y-6">
         {/* ── terrain ── */}
         <div className="card-soft p-3 sm:p-4">
@@ -175,7 +195,7 @@ export default function RiverDecisions() {
               ))}
               <span>· click a hand · drag to rotate</span>
             </p>
-            <p className="font-mono text-[0.6rem] text-muted/70">
+            <p className="font-mono text-fluid-xs text-muted">
               {surface
                 ? `C++ engine · ${surface.data.meta.liveCombos} live combos · villain arrives with ${surface.data.meta.villainCombos} · ${surface.data.meta.ms} ms`
                 : "pricing…"}
@@ -198,7 +218,7 @@ export default function RiverDecisions() {
                   {hoverCell.best}
                   <span className="ml-2 font-mono text-fluid-xs font-normal text-muted">{hoverCell.label}</span>
                 </p>
-                <p className="mt-1 font-mono text-[0.6rem] text-muted">
+                <p className="mt-1 font-mono text-fluid-xs text-muted">
                   fold {chips(hoverCell.evFold)} · call {chips(hoverCell.evCall)} · raise {chips(hoverCell.evRaise)} · {hoverCell.split[hoverCell.best]}/{hoverCell.combos} combos agree
                 </p>
               </div>
@@ -207,7 +227,7 @@ export default function RiverDecisions() {
                 <p className="font-mono text-fluid-xs text-muted">{classLabel(cellOf(hover).i, cellOf(hover).j)} · no live combo on this board</p>
               </div>
             ))}
-            {error && <p className="absolute right-3 top-3 font-mono text-[0.62rem] text-danger">{error}</p>}
+            {error && <p className="absolute right-3 top-3 font-mono text-fluid-xs text-danger">{error}</p>}
           </Terrain>
         </div>
 
@@ -219,7 +239,7 @@ export default function RiverDecisions() {
               value={focus ?? ""}
               onChange={(e) => select(Number(e.target.value))}
               aria-label="hand class to inspect"
-              className="chip-soft bg-surface px-2 py-1 font-mono text-[0.62rem] text-ink"
+              className="chip-soft bg-surface px-2 py-1 font-mono text-fluid-xs text-ink"
             >
               {Array.from({ length: 169 }, (_, k) => { const { i, j } = cellOf(k); return <option key={k} value={k}>{classLabel(i, j)}</option>; })}
             </select>
@@ -239,7 +259,7 @@ export default function RiverDecisions() {
                     className={`chip-soft px-2 py-1 text-[0.72rem] transition-colors ${ix === Math.min(comboIx, combos.length - 1) ? "border-accent/60" : "hover:border-accent/40"}`}
                   >
                     <Card code={c.cards[0]} /> <Card code={c.cards[1]} />
-                    <span className="ml-1.5 font-mono text-[0.58rem]" style={{ color: ACTION_INK[c.evs.best] }}>{c.evs.best}</span>
+                    <span className="ml-1.5 font-mono text-fluid-xs" style={{ color: ACTION_INK[c.evs.best] }}>{c.evs.best}</span>
                   </button>
                 ))}
               </div>
@@ -252,13 +272,13 @@ export default function RiverDecisions() {
                     const best = combo.evs.best === a;
                     return (
                       <div key={a} className={`rounded-md border px-3 py-2 ${best ? "border-accent/50 bg-accent/10" : "border-border"}`}>
-                        <p className="font-mono text-[0.6rem]" style={{ color: ACTION_INK[a] }}>{a}{a === "raise" ? ` to ${fr.sizes.raiseTo}` : a === "call" ? ` ${fr.sizes.bet}` : ""}</p>
+                        <p className="font-mono text-fluid-xs" style={{ color: ACTION_INK[a] }}>{a}{a === "raise" ? ` to ${fr.sizes.raiseTo}` : a === "call" ? ` ${fr.sizes.bet}` : ""}</p>
                         <p className="font-sans text-fluid-lg font-semibold leading-tight text-ink">{chips(v)}</p>
                       </div>
                     );
                   })}
                 </div>
-                <p className="mt-2 font-mono text-[0.6rem] text-muted">
+                <p className="mt-2 font-mono text-fluid-xs text-muted">
                   chips · pot {fr.sizes.pot} · you have {CATEGORY_LABEL[combo.category] ?? combo.category} · villain bets {combo.evs.bettingWeight.toFixed(0)} combos into you
                   {" · "}ahead of {Math.round(combo.evs.pWin * 100)}% of them
                 </p>
@@ -267,8 +287,9 @@ export default function RiverDecisions() {
               {/* check it */}
               <div>
                 <p className="mb-1 font-mono text-fluid-xs text-muted">check it</p>
-                <pre className="overflow-x-auto rounded-md bg-surface px-3 py-2 font-mono text-[0.62rem] leading-relaxed text-ink">{checkLines}</pre>
-                <p className="mt-1 font-mono text-[0.58rem] text-muted/70">
+                <pre className="hidden overflow-x-auto rounded-md bg-surface px-3 py-2 font-mono text-fluid-xs leading-relaxed text-ink sm:block">{checkLines.wide}</pre>
+                <pre className="overflow-x-auto rounded-md bg-surface px-3 py-2 font-mono text-fluid-xs leading-relaxed text-ink sm:hidden">{checkLines.narrow}</pre>
+                <p className="mt-1 font-mono text-fluid-xs text-muted">
                   P pot, B bet, R raise-to · pWin′ is the chance you are ahead given villain calls the raise · probabilities rounded to three places
                 </p>
               </div>
@@ -282,9 +303,9 @@ export default function RiverDecisions() {
                     const cur = fr.policy[d.key];
                     return (
                       <div key={d.key}>
-                        <div className="flex justify-between gap-3 font-mono text-[0.62rem]">
+                        <div className="flex flex-col gap-0.5 font-mono text-fluid-xs min-[480px]:flex-row min-[480px]:justify-between min-[480px]:gap-3">
                           <span className="text-ink">{d.label}</span>
-                          <span className="text-right text-muted">
+                          <span className="text-muted min-[480px]:text-right">
                             {flip ? (
                               <>
                                 {flip.from.toFixed(2)} → {flip.to.toFixed(2)} and{" "}
@@ -322,7 +343,7 @@ export default function RiverDecisions() {
                         key={b}
                         type="button"
                         onClick={() => setBand(b)}
-                        className={`rounded px-1.5 py-0.5 font-mono text-[0.6rem] transition-colors ${band === b ? "bg-accent-bg text-accent-dim" : "text-muted hover:text-ink"}`}
+                        className={`rounded px-1.5 py-0.5 font-mono text-fluid-xs transition-colors ${band === b ? "bg-accent-bg text-accent-dim" : "text-muted hover:text-ink"}`}
                       >
                         ±{Math.round(b * 100)}%
                       </button>
@@ -331,15 +352,15 @@ export default function RiverDecisions() {
                 </div>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
                   <div className="rounded-md border border-border px-3 py-2">
-                    <p className="font-mono text-[0.6rem] text-muted">best at your read</p>
+                    <p className="font-mono text-fluid-xs text-muted">best at your read</p>
                     <p className="font-sans text-fluid-lg font-semibold leading-tight" style={{ color: ACTION_INK[combo.robust.exploitative] }}>{combo.robust.exploitative}</p>
                   </div>
                   <div className="rounded-md border border-border px-3 py-2">
-                    <p className="font-mono text-[0.6rem] text-muted">best worst case, every dial ±{Math.round(combo.robust.band * 100)}%</p>
+                    <p className="font-mono text-fluid-xs text-muted">best worst case, every dial ±{Math.round(combo.robust.band * 100)}%</p>
                     <p className="font-sans text-fluid-lg font-semibold leading-tight" style={{ color: ACTION_INK[combo.robust.robust] }}>{combo.robust.robust}</p>
                   </div>
                 </div>
-                <p className="mt-2 font-mono text-[0.6rem] text-muted">
+                <p className="mt-2 font-mono text-fluid-xs text-muted">
                   worst cases · fold {chips(0)} · call {chips(combo.robust.worstCase.call)} · raise {chips(combo.robust.worstCase.raise)}
                   {combo.robust.exploitative === combo.robust.robust ? " · the read and the hedge agree" : " · the exploit only pays if the read is right"}
                 </p>
@@ -361,7 +382,7 @@ export default function RiverDecisions() {
                 key={b.bet}
                 type="button"
                 onClick={() => setBet(b.bet)}
-                className={`chip-soft px-2 py-0.5 font-mono text-[0.6rem] transition-colors ${bet === b.bet ? "border-accent/60 text-ink" : "text-muted hover:text-ink"}`}
+                className={`chip-soft px-2 py-0.5 font-mono text-fluid-xs transition-colors ${bet === b.bet ? "border-accent/60 text-ink" : "text-muted hover:text-ink"}`}
               >
                 {b.label}
               </button>
@@ -374,7 +395,7 @@ export default function RiverDecisions() {
                 key={m}
                 type="button"
                 onClick={() => setRaiseMult(m)}
-                className={`chip-soft px-2 py-0.5 font-mono text-[0.6rem] transition-colors ${raiseMult === m ? "border-accent/60 text-ink" : "text-muted hover:text-ink"}`}
+                className={`chip-soft px-2 py-0.5 font-mono text-fluid-xs transition-colors ${raiseMult === m ? "border-accent/60 text-ink" : "text-muted hover:text-ink"}`}
               >
                 {m}× bet · to {Math.round(bet * m)}
               </button>
@@ -384,7 +405,7 @@ export default function RiverDecisions() {
           <div className="mt-2 space-y-3">
             {DIALS.map((d) => (
               <label key={d.key} className="block">
-                <span className="flex justify-between font-mono text-[0.62rem]">
+                <span className="flex justify-between font-mono text-fluid-xs">
                   <span className="text-ink">{d.label}</span>
                   <span className="text-muted">{policy[d.key].toFixed(2)}</span>
                 </span>
@@ -399,7 +420,7 @@ export default function RiverDecisions() {
                   className="mt-1 w-full"
                   style={{ accentColor: "var(--color-accent)" }}
                 />
-                <span className="block font-mono text-[0.56rem] text-muted/70">{d.hint}</span>
+                <span className="block font-mono text-fluid-xs text-muted">{d.hint}</span>
               </label>
             ))}
           </div>

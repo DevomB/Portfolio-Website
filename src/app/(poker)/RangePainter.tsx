@@ -37,18 +37,17 @@ export default function RangePainter({ title, range, setRange, board, hover, onH
       <div className="mt-2 flex flex-wrap gap-1.5">
         {RANGE_PRESETS.map((p) => (
           <button key={p.key} type="button" onClick={() => setRange(paintPreset(p.key))}
-                  className="chip-soft px-2 py-0.5 font-mono text-[0.6rem] text-muted hover:text-ink hover:border-accent/40 transition-colors">
+                  className="chip-soft px-2 py-0.5 font-mono text-fluid-xs text-muted hover:text-ink hover:border-accent/40 transition-colors">
             {p.label}
           </button>
         ))}
         <button type="button" onClick={() => setRange(new Array(169).fill(false))}
-                className="chip-soft px-2 py-0.5 font-mono text-[0.6rem] text-muted hover:text-ink transition-colors">
+                className="chip-soft px-2 py-0.5 font-mono text-fluid-xs text-muted hover:text-ink transition-colors">
           none
         </button>
       </div>
       <div
-        className="mt-3 grid select-none touch-none"
-        style={{ gridTemplateColumns: "repeat(13, minmax(0, 1fr))", gap: 2 }}
+        className="mt-3 grid select-none touch-none grid-cols-[repeat(13,minmax(0,1fr))] gap-px sm:gap-[2px]"
         onPointerLeave={() => setPainting(null)}
         onPointerUp={() => setPainting(null)}
       >
@@ -66,7 +65,7 @@ export default function RangePainter({ title, range, setRange, board, hover, onH
               onPointerEnter={() => { if (painting !== null) paintCell(k, painting); }}
               onMouseEnter={() => onHover(k)}
               onMouseLeave={() => onHover(null)}
-              className={`aspect-square rounded-[2px] font-mono text-[0.5rem] leading-none transition-colors ${on ? "text-ink" : "text-muted/40"}`}
+              className={`aspect-square overflow-hidden rounded-[2px] font-mono text-[0.5625rem] leading-none tracking-tighter transition-colors xl:text-[0.625rem] ${on ? "text-ink" : "text-muted"}`}
               style={{
                 background: on
                   ? `rgb(var(--brand-green-rgb) / ${0.18 + 0.5 * t})`
@@ -79,7 +78,7 @@ export default function RangePainter({ title, range, setRange, board, hover, onH
           );
         })}
       </div>
-      <p className="mt-2 font-mono text-[0.58rem] text-muted/70">{caption}</p>
+      <p className="mt-2 font-mono text-fluid-xs text-muted">{caption}</p>
     </div>
   );
 }

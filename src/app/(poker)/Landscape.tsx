@@ -118,7 +118,7 @@ export default function Landscape() {
     : "";
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_360px]">
       {/* ── terrain ── */}
       <div className="card-soft min-w-0 p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-2">
@@ -138,7 +138,7 @@ export default function Landscape() {
             </span>{" "}
             {opponent === "range" ? "" : `random opponent${opponent > 1 ? "s" : ""}`} · drag to rotate
           </p>
-          <p className="font-mono text-[0.6rem] text-muted/70">
+          <p className="font-mono text-fluid-xs text-muted">
             {data
               ? `${data.engine === "native" ? "C++ engine" : "js fallback"} · ${methodLabel} · ${data.cached ? "cached" : `${data.ms} ms`}`
               : "pricing…"}
@@ -159,7 +159,7 @@ export default function Landscape() {
                 {(hoverEq * 100).toFixed(1)}%
                 <span className="ml-2 font-mono text-fluid-xs font-normal text-muted">{classLabel(hoverCell.i, hoverCell.j)}</span>
               </p>
-              <p className="mt-1 font-mono text-[0.6rem] text-muted">
+              <p className="mt-1 font-mono text-fluid-xs text-muted">
                 #{ranks?.[hover!]} of 169 · vs {versus}{opponent === "range" && range[hover!] ? " · also in it" : ""}
               </p>
             </div>
@@ -170,10 +170,10 @@ export default function Landscape() {
             </div>
           )}
           {error && (
-            <p className="absolute right-3 top-3 font-mono text-[0.62rem] text-danger">{error}</p>
+            <p className="absolute right-3 top-3 font-mono text-fluid-xs text-danger">{error}</p>
           )}
           {!ready && (
-            <p className="absolute right-3 top-3 font-mono text-[0.62rem] text-warn">paint at least one hand into the range</p>
+            <p className="absolute right-3 top-3 font-mono text-fluid-xs text-warn">paint at least one hand into the range</p>
           )}
         </Terrain>
       </div>
@@ -181,7 +181,7 @@ export default function Landscape() {
       {/* ── controls ── */}
       <div className="min-w-0 space-y-6">
         <BoardPicker board={board} onChange={setBoard} variant="streets" />
-        <div className={opponent === "range" ? "" : "opacity-60"}>
+        <div>
           <RangePainter
             title={opponent === "range" ? "villain's range" : "villain's range · unused vs random"}
             range={range}
